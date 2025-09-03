@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: spring-ai-mcp-client
+  profiles:
+    active: dev
+
+logging:
+  level:
+    root: info
