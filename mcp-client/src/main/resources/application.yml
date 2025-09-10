@@ -5,7 +5,7 @@ spring:
     active: dev
   ai:
     openai:
-      api-key: sk-bd1466ac9edf4885a1e431b978bac496
+      api-key: ${DEEPSEEK_API_KEY}
       ## 首次调用API： https://api-docs.deepseek.com/zh-cn/
       base-url: https://api.deepseek.com
       chat:

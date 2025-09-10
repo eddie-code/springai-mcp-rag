@@ -41,3 +41,4 @@ build/
 .idea/misc.xml
 .idea/vcs.xml
 .mvn
+/.env
