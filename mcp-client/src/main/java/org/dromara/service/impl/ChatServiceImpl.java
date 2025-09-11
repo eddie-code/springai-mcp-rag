@@ -2,7 +2,9 @@ package org.dromara.service.impl;
 
 import org.dromara.service.IChatService;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
 /**
  * @author lee
@@ -22,8 +24,25 @@ public class ChatServiceImpl implements IChatService {
                 .build();
     }
 
+    /**
+     * 提示词的三大类型
+     * 1、system
+     * 2. user
+     * 3. assistant
+     */
+
     @Override
     public String chatTest(String prompt) {
         return chatClient.prompt(prompt).call().content();
+    }
+
+    @Override
+    public Flux<ChatResponse> streamResponse(String prompt) {
+        return chatClient.prompt(prompt).stream().chatResponse();
+    }
+
+    @Override
+    public Flux<String> streamStr(String prompt) {
+        return chatClient.prompt(prompt).stream().content();
     }
 }
