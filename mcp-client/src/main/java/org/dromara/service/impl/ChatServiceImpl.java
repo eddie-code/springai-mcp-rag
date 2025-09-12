@@ -33,16 +33,31 @@ public class ChatServiceImpl implements IChatService {
 
     @Override
     public String chatTest(String prompt) {
+        try {
+            Thread.sleep(6000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         return chatClient.prompt(prompt).call().content();
     }
 
     @Override
     public Flux<ChatResponse> streamResponse(String prompt) {
+        try {
+            Thread.sleep(6000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         return chatClient.prompt(prompt).stream().chatResponse();
     }
 
     @Override
     public Flux<String> streamStr(String prompt) {
+        try {
+            Thread.sleep(6000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         return chatClient.prompt(prompt).stream().content();
     }
 }
