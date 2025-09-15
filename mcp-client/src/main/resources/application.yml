@@ -5,12 +5,12 @@ spring:
     active: dev
   ai:
     openai:
-      api-key: ${DEEPSEEK_API_KEY}
+      api-key: ${OPENAI_API_KEY}
       ## 首次调用API： https://api-docs.deepseek.com/zh-cn/
-      base-url: https://api.deepseek.com
+      base-url: ${OPENAI_BASE_URL}
       chat:
         options:
-          model: deepseek-chat
+          model: ${OPENAI_MODEL}
 
 logging:
   level:
