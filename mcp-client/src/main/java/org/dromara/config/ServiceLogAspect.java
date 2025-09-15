@@ -5,6 +5,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StopWatch;
 
 /**
  * 监控方法执行时间并记录日志
@@ -30,17 +31,23 @@ public class ServiceLogAspect {
     @Around("execution(* org.dromara.service.impl..*.*(..))")
     public Object recordTimesLogAspect(ProceedingJoinPoint joinPoint) throws Throwable {
 
-        long begin = System.currentTimeMillis();
+//        long begin = System.currentTimeMillis();
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
 
         Object proceed = joinPoint.proceed();
 
         // 构造目标方法的完整签名信息
         String point = joinPoint.getTarget().getClass().getName() + "." + joinPoint.getSignature().getName();
 
-        long end = System.currentTimeMillis();
+//        long end = System.currentTimeMillis();
+
+        stopWatch.stop();
 
         // 计算方法执行耗时
-        long time = end - begin;
+//        long time = end - begin;
+        long time = stopWatch.getTotalTimeMillis();
 
         // 根据执行耗时长短，使用不同级别日志记录监控信息
         if (time > 3000) {
