@@ -1,5 +1,6 @@
 package org.dromara.controller;
 
+import org.dromara.enums.SSEMsgType;
 import org.dromara.utils.SSEServer;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,5 +28,17 @@ public class SSEController {
         return SSEServer.connect(userId);
     }
 
+    /**
+     * SSE发送单个消息
+     *
+     * @param userId
+     * @param message
+     * @return
+     */
+    @GetMapping(path = "/sendMessage")
+    public Object sendMessage(@RequestParam String userId, @RequestParam String message) {
+        SSEServer.sendMsg(userId, message, SSEMsgType.MESSAGE);
+        return "OK";
+    }
 
 }
