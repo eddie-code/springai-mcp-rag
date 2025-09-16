@@ -39,6 +39,8 @@ public class SSEServer {
 
         sseClients.put(userId, sseEmitter);
 
+        log.info("SSE连接创建成功, 连接的用户ID为：{}", userId);
+
         return sseEmitter;
     }
 
