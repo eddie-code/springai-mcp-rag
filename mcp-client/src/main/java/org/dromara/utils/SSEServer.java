@@ -104,9 +104,9 @@ public class SSEServer {
      * 发送SSE消息给指定的客户端
      *
      * @param sseEmitter SSE发射器实例，用于向客户端发送事件
-     * @param userId 用户唯一标识符，作为事件ID
-     * @param message 要发送的消息内容
-     * @param msgType 消息类型，决定事件名称
+     * @param userId     用户唯一标识符，作为事件ID
+     * @param message    要发送的消息内容
+     * @param msgType    消息类型，决定事件名称
      */
     private static void sendEmitterMessage(SseEmitter sseEmitter, String userId, String message, SSEMsgType msgType) {
         try {
@@ -125,7 +125,7 @@ public class SSEServer {
     /**
      * 向指定用户发送消息
      *
-     * @param userId 目标用户的唯一标识符
+     * @param userId  目标用户的唯一标识符
      * @param message 要发送的消息内容
      * @param msgType 消息类型
      */
@@ -140,6 +140,24 @@ public class SSEServer {
             sendEmitterMessage(sseEmitter, userId, message, msgType);
         }
     }
+
+    /**
+     * 向所有用户发送消息
+     *
+     * @param message 消息内容
+     * @param msgType 消息类型
+     */
+    public static void sendMsgToAllUsers(String message, SSEMsgType msgType) {
+        // 检查客户端集合是否为空
+        if (CollectionUtils.isEmpty(sseClients)) {
+            return;
+        }
+        // 遍历所有客户端连接，向每个用户发送消息
+        sseClients.forEach((userId, sseEmitter) -> {
+            sendEmitterMessage((SseEmitter) sseEmitter, userId, message, msgType);
+        });
+    }
+
 
 }
 

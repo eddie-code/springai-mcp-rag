@@ -41,4 +41,16 @@ public class SSEController {
         return "OK";
     }
 
+    /**
+     * SSE发送群消息
+     *
+     * @param message
+     * @return
+     */
+    @GetMapping(path = "/sendMessageAll")
+    public Object sendMessageAll(@RequestParam String message) {
+        SSEServer.sendMsgToAllUsers(message, SSEMsgType.MESSAGE);
+        return "OK";
+    }
+
 }

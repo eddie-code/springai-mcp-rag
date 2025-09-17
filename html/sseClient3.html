@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSE多客户端消息系统</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: row;
+            flex: 1;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+        }
+
+        .sender-panel, .receiver-panel {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sender-panel {
+            border-right: 1px solid #e9ecef;
+        }
+
+        @media (max-width: 768px) {
+            .sender-panel {
+                border-right: none;
+                border-bottom: 1px solid #e9ecef;
+            }
+        }
+
+        .panel-title {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4b6cb7;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #dc3545;
+        }
+
+        .status-indicator.connected {
+            background-color: #28a745;
+        }
+
+        .status-indicator.connecting {
+            background-color: #ffc107;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #495057;
+        }
+
+        input, textarea, select {
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #4b6cb7;
+            box-shadow: 0 0 0 3px rgba(75, 108, 183, 0.2);
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-connect {
+            background-color: #4b6cb7;
+            color: white;
+        }
+
+        .btn-connect:hover {
+            background-color: #3a5999;
+        }
+
+        .btn-disconnect {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-disconnect:hover {
+            background-color: #bd2130;
+        }
+
+        .btn-send {
+            background-color: #28a745;
+            color: white;
+            flex: 1;
+        }
+
+        .btn-send:hover {
+            background-color: #218838;
+        }
+
+        .btn-clear {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-clear:hover {
+            background-color: #5a6268;
+        }
+
+        .btn-add {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .btn-add:hover {
+            background-color: #138496;
+        }
+
+        .btn-broadcast {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .btn-broadcast:hover {
+            background-color: #e0a800;
+        }
+
+        .events-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .events-title {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #events {
+            height: 300px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .event {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .event-time {
+            color: #6c757d;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .event-data {
+            color: #495057;
+            word-break: break-word;
+        }
+
+        .event-type {
+            display: inline-block;
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 6px;
+            color: #6c757d;
+        }
+
+        .user-id-badge {
+            display: inline-block;
+            background-color: #4b6cb7;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        .message-badge {
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            color: #6c757d;
+            font-size: 14px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .response-status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            background-color: #f8f9fa;
+            font-size: 14px;
+        }
+
+        .success {
+            color: #28a745;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+
+        .server-url-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+        }
+
+        .url-note {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+
+        /* 多客户端管理样式 */
+        .clients-management {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .clients-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .clients-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: white;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .client-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #f1f1f1;
+        }
+
+        .client-item:last-child {
+            border-bottom: none;
+        }
+
+        .client-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .client-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #dc3545;
+        }
+
+        .client-status.connected {
+            background-color: #28a745;
+        }
+
+        .client-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .client-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        .broadcast-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .client-count {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .connection-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 14px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .stat-connected {
+            background-color: #28a745;
+        }
+
+        .stat-disconnected {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>SSE多客户端消息系统</h1>
+        <p class="description">模拟多个客户端并支持群发消息</p>
+    </header>
+
+    <div class="status-bar">
+        <div class="connection-status">
+            <div class="status-indicator" id="statusIndicator"></div>
+            <span id="statusText">未连接</span>
+        </div>
+        <div class="connection-stats">
+            <div class="stat-item">
+                <div class="stat-indicator stat-connected"></div>
+                <span id="connectedCount">已连接: 0</span>
+            </div>
+            <div class="stat-item">
+                <div class="stat-indicator stat-disconnected"></div>
+                <span id="disconnectedCount">未连接: 0</span>
+            </div>
+        </div>
+        <div id="serverUrl">服务器: http://localhost:8080</div>
+    </div>
+
+    <div class="main-content">
+        <div class="sender-panel">
+            <h2 class="panel-title">发送消息</h2>
+
+            <div class="server-url-group">
+                <label for="sendServerUrl">发送消息服务器URL</label>
+                <input type="text" id="sendServerUrl" value="http://localhost:8080/sse/sendMessage" placeholder="请输入发送消息的服务器URL">
+                <div class="url-note">注意: 由于浏览器安全限制，需要确保服务器已配置CORS</div>
+            </div>
+
+            <div class="input-group">
+                <label for="targetClients">目标客户端</label>
+                <select id="targetClients" multiple>
+                    <option value="all" selected>所有客户端</option>
+                </select>
+                <div class="url-note">按住Ctrl可选择多个客户端</div>
+            </div>
+
+            <div class="input-group">
+                <label for="messageContent">消息内容</label>
+                <textarea id="messageContent" placeholder="请输入要发送的消息内容">这是一条测试消息</textarea>
+            </div>
+
+            <div class="buttons">
+                <button id="sendMessageBtn" class="btn-send">发送消息</button>
+                <button id="broadcastMessageBtn" class="btn-broadcast">群发消息</button>
+            </div>
+
+            <div id="responseStatus" class="response-status">等待发送消息...</div>
+        </div>
+
+        <div class="receiver-panel">
+            <h2 class="panel-title">客户端管理</h2>
+
+            <div class="clients-management">
+                <div class="clients-header">
+                    <h3>客户端列表</h3>
+                    <div class="buttons">
+                        <button id="addClientBtn" class="btn-add">添加客户端</button>
+                        <button id="removeAllClientsBtn" class="btn-disconnect">移除所有</button>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="clientsToCreate">批量创建客户端数量</label>
+                    <input type="number" id="clientsToCreate" min="1" max="20" value="3" placeholder="输入要创建的客户端数量">
+                </div>
+
+                <div class="buttons">
+                    <button id="batchCreateClientsBtn" class="btn-add">批量创建客户端</button>
+                    <button id="connectAllBtn" class="btn-connect">全部连接</button>
+                    <button id="disconnectAllBtn" class="btn-disconnect" disabled>全部断开</button>
+                </div>
+
+                <div class="clients-list" id="clientsList">
+                    <!-- 客户端列表将在这里动态生成 -->
+                    <div class="client-item" style="color: #6c757d; text-align: center;">
+                        暂无客户端，请点击添加
+                    </div>
+                </div>
+
+                <div class="client-count" id="activeClientsCount">
+                    活跃客户端: 0 个 | 总客户端: 0 个
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="serverUrlInput">SSE服务器URL</label>
+                <input type="text" id="serverUrlInput" value="http://localhost:8080/sse/connect" placeholder="请输入SSE服务器URL">
+            </div>
+
+            <div class="buttons">
+                <button id="clearBtn" class="btn-clear">清空消息</button>
+            </div>
+
+            <div class="events-container">
+                <div class="events-title">
+                    <span>实时事件</span>
+                    <select id="eventFilter">
+                        <option value="all">所有事件</option>
+                        <option value="message">只显示消息</option>
+                        <option value="status">只显示状态</option>
+                        <option value="error">只显示错误</option>
+                    </select>
+                </div>
+                <div id="events"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>SSE多客户端消息系统 &copy; 2023</p>
+    </footer>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 发送消息相关元素
+        const sendMessageBtn = document.getElementById('sendMessageBtn');
+        const broadcastMessageBtn = document.getElementById('broadcastMessageBtn');
+        const messageContentInput = document.getElementById('messageContent');
+        const responseStatus = document.getElementById('responseStatus');
+        const sendServerUrlInput = document.getElementById('sendServerUrl');
+        const targetClientsSelect = document.getElementById('targetClients');
+
+        // 接收消息相关元素
+        const connectAllBtn = document.getElementById('connectAllBtn');
+        const disconnectAllBtn = document.getElementById('disconnectAllBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const serverUrlInput = document.getElementById('serverUrlInput');
+        const eventsContainer = document.getElementById('events');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        const serverUrlElement = document.getElementById('serverUrl');
+        const connectedCountElement = document.getElementById('connectedCount');
+        const disconnectedCountElement = document.getElementById('disconnectedCount');
+        const eventFilter = document.getElementById('eventFilter');
+
+        // 多客户端管理元素
+        const addClientBtn = document.getElementById('addClientBtn');
+        const removeAllClientsBtn = document.getElementById('removeAllClientsBtn');
+        const batchCreateClientsBtn = document.getElementById('batchCreateClientsBtn');
+        const clientsToCreateInput = document.getElementById('clientsToCreate');
+        const clientsList = document.getElementById('clientsList');
+        const activeClientsCount = document.getElementById('activeClientsCount');
+
+        // 客户端管理相关变量
+        let clients = [];
+        let clientIdCounter = 1;
+        let selectedClientId = null;
+
+        // 格式化时间
+        function formatTime(date) {
+            return date.toLocaleTimeString('zh-CN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+        }
+
+        // 添加事件到界面
+        function addEvent(type, data, clientId = null) {
+            // 应用过滤器
+            if (eventFilter.value !== 'all' && eventFilter.value !== type) {
+                return;
+            }
+
+            const time = new Date();
+            const eventElement = document.createElement('div');
+            eventElement.className = 'event';
+            eventElement.setAttribute('data-type', type);
+
+            // 如果有客户端ID，添加到数据中
+            let displayData = data;
+            if (clientId) {
+                displayData = `[客户端 ${clientId}] ${data}`;
+            }
+
+            // 高亮显示消息内容
+            if (data.includes('"message":')) {
+                try {
+                    const msgData = JSON.parse(data);
+                    if (msgData.message) {
+                        displayData = displayData.replace(
+                            msgData.message,
+                            `<span class="message-badge">${msgData.message}</span>`
+                        );
+                    }
+                } catch (e) {
+                    // 不是JSON格式，保持原样
+                }
+            }
+
+            eventElement.innerHTML = `
+                <div class="event-time">${formatTime(time)}</div>
+                <div class="event-data">
+                    <span class="event-type">${type}</span>
+                    <span>${displayData}</span>
+                </div>
+            `;
+            eventsContainer.prepend(eventElement);
+
+            // 保持事件列表不会过长
+            if (eventsContainer.children.length > 100) {
+                eventsContainer.removeChild(eventsContainer.lastChild);
+            }
+        }
+
+        // 更新连接状态
+        function updateStatus() {
+            const connectedClients = clients.filter(client => client.connected).length;
+            const totalClients = clients.length;
+            const disconnectedClients = totalClients - connectedClients;
+
+            connectedCountElement.textContent = `已连接: ${connectedClients}`;
+            disconnectedCountElement.textContent = `未连接: ${disconnectedClients}`;
+
+            activeClientsCount.textContent = `活跃客户端: ${connectedClients} 个 | 总客户端: ${totalClients} 个`;
+
+            // 更新全局状态
+            if (connectedClients > 0) {
+                statusIndicator.classList.add('connected');
+                statusIndicator.classList.remove('connecting');
+                statusText.textContent = `${connectedClients} 个客户端已连接`;
+                disconnectAllBtn.disabled = false;
+            } else if (totalClients > 0) {
+                statusIndicator.classList.remove('connected', 'connecting');
+                statusText.textContent = `${totalClients} 个客户端未连接`;
+                disconnectAllBtn.disabled = true;
+            } else {
+                statusIndicator.classList.remove('connected', 'connecting');
+                statusText.textContent = '未连接';
+                disconnectAllBtn.disabled = true;
+            }
+
+            connectAllBtn.disabled = totalClients === 0 || connectedClients === totalClients;
+            disconnectAllBtn.disabled = connectedClients === 0;
+        }
+
+        // 更新响应状态
+        function updateResponseStatus(isSuccess, message) {
+            responseStatus.textContent = message;
+            responseStatus.className = 'response-status ' + (isSuccess ? 'success' : 'error');
+        }
+
+        // 创建新客户端
+        function createClient() {
+            const clientId = clientIdCounter++;
+            const client = {
+                id: clientId,
+                name: `客户端 ${clientId}`,
+                connected: false,
+                eventSource: null,
+                userId: `user_${Math.floor(1000 + Math.random() * 9000)}`
+            };
+
+            clients.push(client);
+            renderClientsList();
+            updateClientsSelect();
+            updateStatus();
+
+            return client;
+        }
+
+        // 批量创建客户端
+        function batchCreateClients() {
+            const count = parseInt(clientsToCreateInput.value) || 3;
+            if (count < 1 || count > 50) {
+                alert('请输入1-50之间的数字');
+                return;
+            }
+
+            for (let i = 0; i < count; i++) {
+                createClient();
+            }
+
+            addEvent('status', `批量创建了 ${count} 个客户端`);
+        }
+
+        // 移除所有客户端
+        function removeAllClients() {
+            // 先断开所有连接
+            clients.forEach(client => {
+                if (client.connected) {
+                    disconnectClient(client.id);
+                }
+            });
+
+            clients = [];
+            renderClientsList();
+            updateClientsSelect();
+            updateStatus();
+
+            addEvent('status', '已移除所有客户端');
+        }
+
+        // 渲染客户端列表
+        function renderClientsList() {
+            clientsList.innerHTML = '';
+
+            if (clients.length === 0) {
+                clientsList.innerHTML = '<div class="client-item" style="color: #6c757d; text-align: center;">暂无客户端，请点击添加</div>';
+                return;
+            }
+
+            clients.forEach(client => {
+                const clientElement = document.createElement('div');
+                clientElement.className = 'client-item';
+
+                clientElement.innerHTML = `
+                    <div class="client-info">
+                        <div class="client-status ${client.connected ? 'connected' : ''}"></div>
+                        <span>${client.name} (${client.userId})</span>
+                    </div>
+                    <div class="client-actions">
+                        <button class="client-btn ${client.connected ? 'btn-disconnect' : 'btn-connect'}"
+                                data-client-id="${client.id}"
+                                data-action="${client.connected ? 'disconnect' : 'connect'}">
+                            ${client.connected ? '断开' : '连接'}
+                        </button>
+                        <button class="client-btn btn-disconnect" data-client-id="${client.id}" data-action="remove">
+                            移除
+                        </button>
+                    </div>
+                `;
+
+                clientsList.appendChild(clientElement);
+            });
+
+            // 添加事件监听
+            clientsList.querySelectorAll('button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const clientId = this.getAttribute('data-client-id');
+                    const action = this.getAttribute('data-action');
+
+                    handleClientAction(clientId, action);
+                });
+            });
+        }
+
+        // 处理客户端操作
+        function handleClientAction(clientId, action) {
+            const client = clients.find(c => c.id === clientId);
+            if (!client) return;
+
+            switch (action) {
+                case 'connect':
+                    connectClient(clientId);
+                    break;
+                case 'disconnect':
+                    disconnectClient(clientId);
+                    break;
+                case 'remove':
+                    if (client.connected) {
+                        disconnectClient(clientId);
+                    }
+                    clients = clients.filter(c => c.id !== clientId);
+                    renderClientsList();
+                    updateClientsSelect();
+                    updateStatus();
+                    addEvent('status', `已移除客户端: ${client.name}`);
+                    break;
+            }
+        }
+
+        // 更新客户端选择下拉框
+        function updateClientsSelect() {
+            // 保存当前选中的值
+            const selectedValues = Array.from(targetClientsSelect.selectedOptions).map(opt => opt.value);
+
+            // 清空并重新填充
+            targetClientsSelect.innerHTML = '<option value="all">所有客户端</option>';
+
+            clients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.userId;
+                option.textContent = `${client.name} (${client.userId})`;
+                targetClientsSelect.appendChild(option);
+            });
+
+            // 恢复选中状态
+            selectedValues.forEach(value => {
+                const option = Array.from(targetClientsSelect.options).find(opt => opt.value === value);
+                if (option) option.selected = true;
+            });
+
+            // 如果没有选中任何选项，默认选中"所有客户端"
+            if (targetClientsSelect.selectedOptions.length === 0) {
+                targetClientsSelect.options[0].selected = true;
+            }
+        }
+
+        // 连接到SSE服务器（单个客户端）
+        function connectClient(clientId) {
+            const client = clients.find(c => c.id === clientId);
+            if (!client || client.connected) return;
+
+            const serverUrl = serverUrlInput.value.trim();
+            if (!serverUrl) {
+                addEvent('error', '请输入服务器URL', client.name);
+                return;
+            }
+
+            // 构建带参数的URL
+            const url = new URL(serverUrl);
+            url.searchParams.append('userId', client.userId);
+
+            try {
+                addEvent('status', `正在连接到服务器: ${url.toString()}`, client.name);
+
+                // 创建EventSource实例连接到服务器
+                client.eventSource = new EventSource(url.toString());
+
+                // 监听通用消息事件
+                client.eventSource.onmessage = function (event) {
+                    addEvent('message', event.data, client.name);
+                };
+
+                // 监听自定义事件
+                client.eventSource.addEventListener('userEvent', function (event) {
+                    addEvent('userEvent', event.data, client.name);
+                });
+
+                // 监听错误事件
+                client.eventSource.onerror = function (error) {
+                    addEvent('error', '连接出错', client.name);
+                    disconnectClient(client.id);
+                };
+
+                // 连接打开时
+                client.eventSource.onopen = function () {
+                    client.connected = true;
+                    addEvent('status', '连接已建立', client.name);
+                    renderClientsList();
+                    updateStatus();
+                };
+
+            } catch (error) {
+                addEvent('error', '连接失败: ' + error.message, client.name);
+            }
+        }
+
+        // 断开连接（单个客户端）
+        function disconnectClient(clientId) {
+            const client = clients.find(c => c.id === clientId);
+            if (!client || !client.connected) return;
+
+            if (client.eventSource) {
+                client.eventSource.close();
+                client.eventSource = null;
+            }
+
+            client.connected = false;
+            addEvent('status', '连接已关闭', client.name);
+            renderClientsList();
+            updateStatus();
+        }
+
+        // 连接所有客户端
+        function connectAllClients() {
+            let connectedCount = 0;
+            clients.forEach(client => {
+                if (!client.connected) {
+                    connectClient(client.id);
+                    connectedCount++;
+                }
+            });
+
+            if (connectedCount > 0) {
+                addEvent('status', `正在连接 ${connectedCount} 个客户端`);
+            } else {
+                addEvent('status', '所有客户端已连接');
+            }
+        }
+
+        // 断开所有客户端连接
+        function disconnectAllClients() {
+            let disconnectedCount = 0;
+            clients.forEach(client => {
+                if (client.connected) {
+                    disconnectClient(client.id);
+                    disconnectedCount++;
+                }
+            });
+
+            if (disconnectedCount > 0) {
+                addEvent('status', `已断开 ${disconnectedCount} 个客户端`);
+            } else {
+                addEvent('status', '所有客户端已断开');
+            }
+        }
+
+        // 清空消息
+        function clearEvents() {
+            eventsContainer.innerHTML = '';
+            addEvent('status', '消息已清空');
+        }
+
+        // 发送消息到指定客户端
+        function sendMessage() {
+            const message = messageContentInput.value.trim();
+            if (!message) {
+                updateResponseStatus(false, '错误：请输入消息内容');
+                return;
+            }
+
+            const serverUrl = sendServerUrlInput.value.trim();
+            if (!serverUrl) {
+                updateResponseStatus(false, '错误：请输入服务器URL');
+                return;
+            }
+
+            // 获取选中的目标客户端
+            const selectedOptions = Array.from(targetClientsSelect.selectedOptions);
+            let targetUserIds = [];
+
+            if (selectedOptions.some(opt => opt.value === 'all')) {
+                // 选择了"所有客户端"
+                targetUserIds = clients.map(client => client.userId);
+            } else {
+                // 选择了特定客户端
+                targetUserIds = selectedOptions.map(opt => opt.value);
+            }
+
+            if (targetUserIds.length === 0) {
+                updateResponseStatus(false, '错误：请选择目标客户端');
+                return;
+            }
+
+            // 发送消息到每个选中的客户端
+            let successCount = 0;
+            let errorCount = 0;
+
+            targetUserIds.forEach(userId => {
+                try {
+                    // 使用表单提交方式发送消息
+                    updateResponseStatus(true, `发送中到 ${userId}...`);
+
+                    // 创建隐藏表单
+                    const form = document.createElement('form');
+                    form.method = 'GET';
+                    form.action = serverUrl;
+                    form.target = 'hiddenFrame';
+                    form.style.display = 'none';
+
+                    // 添加参数
+                    const userIdInput = document.createElement('input');
+                    userIdInput.type = 'hidden';
+                    userIdInput.name = 'userId';
+                    userIdInput.value = userId;
+                    form.appendChild(userIdInput);
+
+                    const messageInput = document.createElement('input');
+                    messageInput.type = 'hidden';
+                    messageInput.name = 'message';
+                    messageInput.value = message;
+                    form.appendChild(messageInput);
+
+                    // 创建隐藏iframe用于接收响应
+                    const iframe = document.createElement('iframe');
+                    iframe.name = 'hiddenFrame';
+                    iframe.style.display = 'none';
+                    iframe.onload = function() {
+                        successCount++;
+                        updateResponseStatus(true, `已发送 ${successCount}/${targetUserIds.length} 条消息`);
+                        addEvent('sent', `发送消息给 ${userId}: ${message}`);
+
+                        if (successCount + errorCount === targetUserIds.length) {
+                            if (errorCount > 0) {
+                                updateResponseStatus(false, `发送完成: ${successCount} 成功, ${errorCount} 失败`);
+                            } else {
+                                updateResponseStatus(true, `所有消息发送成功 (${successCount} 条)`);
+                            }
+                        }
+
+                        document.body.removeChild(form);
+                        document.body.removeChild(iframe);
+                    };
+
+                    // 提交表单
+                    document.body.appendChild(form);
+                    document.body.appendChild(iframe);
+                    form.submit();
+
+                } catch (error) {
+                    console.error('发送消息失败:', error);
+                    errorCount++;
+
+                    if (successCount + errorCount === targetUserIds.length) {
+                        updateResponseStatus(false, `发送完成: ${successCount} 成功, ${errorCount} 失败`);
+                    }
+                }
+            });
+        }
+
+        // 群发消息到所有客户端
+        function broadcastMessage() {
+            // 选择所有客户端
+            Array.from(targetClientsSelect.options).forEach(option => {
+                option.selected = option.value === 'all';
+            });
+
+            // 发送消息
+            sendMessage();
+        }
+
+        // 初始化
+        function init() {
+            // 绑定按钮事件
+            addClientBtn.addEventListener('click', () => createClient());
+            removeAllClientsBtn.addEventListener('click', removeAllClients);
+            batchCreateClientsBtn.addEventListener('click', batchCreateClients);
+            connectAllBtn.addEventListener('click', connectAllClients);
+            disconnectAllBtn.addEventListener('click', disconnectAllClients);
+            clearBtn.addEventListener('click', clearEvents);
+            sendMessageBtn.addEventListener('click', sendMessage);
+            broadcastMessageBtn.addEventListener('click', broadcastMessage);
+
+            // 事件过滤器变化
+            eventFilter.addEventListener('change', function() {
+                // 隐藏/显示事件 based on filter
+                const events = eventsContainer.querySelectorAll('.event');
+                events.forEach(event => {
+                    const type = event.getAttribute('data-type');
+                    if (eventFilter.value === 'all' || eventFilter.value === type) {
+                        event.style.display = 'block';
+                    } else {
+                        event.style.display = 'none';
+                    }
+                });
+            });
+
+            // 初始化界面状态
+            updateStatus();
+            updateResponseStatus(true, '准备就绪，可以发送消息');
+            addEvent('info', '页面已加载，添加客户端后开始接收事件');
+            addEvent('info', '注意: 发送消息需要服务器支持CORS或JSONP');
+
+            // 默认创建3个客户端
+            for (let i = 0; i < 3; i++) {
+                createClient();
+            }
+
+            // 自动连接所有客户端
+            setTimeout(connectAllClients, 1000);
+        }
+
+        // 启动初始化
+        init();
+    });
+</script>
+</body>
+</html>
