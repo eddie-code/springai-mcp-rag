@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpringAI 实战</title>
+    <link rel="stylesheet" href="../html/css/doctor/doctor.css">
+    <link rel="stylesheet" href="../html/libs/element-2.15.13/index.css">
+    <!-- <link rel="stylesheet" href="../html/css/theme/style/theme/index.css"> -->
+    <style>
+        .el-upload-dragger {
+            width: 260px;
+            height: 130px;
+        }
+
+        .tts-btn {
+            background: #1890ff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .tts-btn:hover {
+            background: #40a9ff;
+        }
+
+        .tts-btn:disabled {
+            background: #d9d9d9;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+<div class="chat-container" id="doctorPage">
+    <div class="chat-header">
+        Spring-AI MCP服务+RAG知识库 实战
+    </div>
+    <div class="chat-messages" id="chat-messages">
+
+        <block v-for="(item, index) in chatList">
+            <div class="message user" v-if="item.chatType === 'user'">
+                <div class="text">{{ item.content }}</div>
+                <div class="user-avatar">YJY</div>
+            </div>
+            <div class="message bot" v-else>
+                <div class="avatar">AI</div>
+                <div class="text" v-html="item.content"></div>
+            </div>
+        </block>
+
+    </div>
+
+    <div class="chat-input-container">
+        <div class="chat-input-group">
+            <div class="search-group">
+                <div class="checkbox-group" id="searchOptionRadioGroup">
+                    <label>
+                        <input type="button"
+                               :class="{'search-style': !internetSearchSelected, 'search-style-selected': internetSearchSelected}"
+                               id="internetSearch" value="联网搜索" @click="doInternetSearch(internetSearchSelected)" />
+                    </label>
+                    <label>
+                        <input type="button"
+                               :class="{'search-style': !knowledgeSearchSelected, 'search-style-selected': knowledgeSearchSelected}"
+                               id="knowledgeSearch" value="知识库搜索"
+                               @click="doKnowledgeSearch(knowledgeSearchSelected)" />
+                    </label>
+                    <label>
+                        <input type="button"
+                               :class="{'search-style': !ttsEnabled, 'search-style-selected': ttsEnabled}"
+                               id="ttsToggle" value="语音播报" @click="toggleTTS()" />
+                    </label>
+                    <!-- <label>
+                        <input
+                            type="button"
+                            :class="{'search-style': !imageReadSelected, 'search-style-selected': imageReadSelected}"
+                            id="knowledgeSearch"
+                            value="上传图片"
+                            @click="doImageRead(imageReadSelected)"/>
+                    </label> -->
+                </div>
+            </div>
+
+            <!-- TTS控制面板 -->
+            <div class="tts-controls" v-if="ttsEnabled"
+                 style="margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                    <button @click="pauseTTS" :disabled="!isSpeaking" class="tts-btn"
+                            style="padding: 5px 10px; font-size: 12px;">{{ isSpeaking ? '暂停' : '继续' }}</button>
+                    <button @click="stopTTS" class="tts-btn" style="padding: 5px 10px; font-size: 12px;">停止</button>
+                    <span style="font-size: 12px; color: #666; margin-left: 10px;">语速:</span>
+                    <input type="range" v-model="speechRate" min="0.5" max="2" step="0.1" style="width: 60px;">
+                    <span style="font-size: 12px; color: #666;">{{ speechRate }}x</span>
+                    <span style="font-size: 12px; color: #666; margin-left: 10px;">音调:</span>
+                    <input type="range" v-model="speechPitch" min="0.5" max="2" step="0.1" style="width: 60px;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 12px; color: #666;">声音:</span>
+                    <select v-model="selectedVoice" @change="updateVoice" style="font-size: 12px; padding: 2px;">
+                        <option v-for="voice in availableVoices" :key="voice.name" :value="voice">
+                            {{ voice.name }} ({{ voice.lang }})
+                        </option>
+                    </select>
+                    <span v-if="isSpeaking" style="font-size: 12px; color: #1890ff;">🔊 播放中...</span>
+                </div>
+            </div>
+
+            <div class="chat-input">
+                <input type="text" id="user-input" class="user-input" value="" placeholder="请输入内容..."
+                       @keydown="handleKeyDown(event)">
+                <button id="btn-chat" class="btn-chat" @click="doChat()">发送</button>
+            </div>
+        </div>
+
+        <div class="upload-group">
+            <div class="button-group">
+                <!-- <button>上传知识库文档</button> -->
+                <!-- 允许上传PDF、Word文档、TEXT文档 -->
+                <el-upload drag class="course-cover-uploader" action="" accept=".txt"
+                           :http-request="p => uploadDoc(p)" :show-file-list="false">
+                    <i class="el-icon-upload" style="margin-top: 20px;"></i>
+                    <div class="el-upload__text" style="font-size: 13px;">拖拽文档 或<em>点击上传</em></div>
+                    <div class="el-upload__tip" slot="tip">只能上传text文本文件, 且不超过10MB。</div>
+                </el-upload>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+
+<script src="../html/libs/vue.min.js"></script>
+<script src="../html/libs/axios.min.js"></script>
+<script src="../html/libs/jquery-3.4.1.min.js"></script>
+<script src="../html/libs/js.cookie.min.js"></script>
+<script src="../html/js/app.js"></script>
+
+<script src="../html/libs/element-2.15.13/index.js"></script>
+<script src="../html/libs/marked.min.js"></script>
+
+<script src="../html/js/cookieUtils.js"></script>
+<script src="../html/js/request.js"></script>
+<script src="../html/js/apis/admin/doctorApi.js"></script>
+
+<script>
+
+    var doctorPage = new Vue({
+        el: "#doctorPage",
+        components: {
+            // 'my-component': httpVueLoader('my-component.vue')
+        },
+        data() {
+            return {
+                botMsgId: null,
+                currentUserName: null,
+                chatList: [],
+
+                internetSearchSelected: false,
+                knowledgeSearchSelected: false,
+                imageReadSelected: false,
+
+                // TTS相关变量
+                ttsEnabled: false,
+                isSpeaking: false,
+                speechSynthesis: null,
+                currentUtterance: null,
+                speechRate: 1.0,
+                speechPitch: 1.0,
+                availableVoices: [],
+                selectedVoice: null,
+                speechQueue: [],
+                isProcessingQueue: false,
+
+                // 流式TTS缓冲相关
+                textBuffer: '',             // 文本缓冲区
+                bufferTimeout: null,        // 缓冲超时定时器
+                lastReceiveTime: 0,         // 上次接收文本时间
+
+                userId: null,
+            }
+        },
+        created() {
+            var me = this;
+            // 随机生成一个12位用户id
+            var userId = Math.random().toString(36).substring(2, 12);
+            console.log("userId = " + userId);
+            this.initSSE(userId);
+            this.initTTS();
+        },
+        mounted() {
+            this.scrollToBottom();
+
+        },
+        watch: {
+        },
+        methods: {
+            uploadDoc(params) {
+                console.log("自定义上传", params);
+
+                const file = params.file;
+
+                // 封装FormData对象
+                var formData = new FormData();
+                formData.append("file", params.file);
+
+                doctorApi.uploadRagDoc(formData).then(response => {
+                    console.log(response);
+                    if (response.status == 200) {
+                        this.$message.success('上传知识库文档成功！');
+                    } else {
+                        this.$message.error('上传知识库文档失败！');
+                    }
+
+                });
+            },
+
+            initSSE(userId) {
+                var me = this;
+
+                let source = null;
+                if (window.EventSource) {
+                    // 建立连接
+                    source = new EventSource('http://127.0.0.1:8080/sse/connect?userId=' + userId);
+                    console.log("连接用户=" + userId);
+                    me.currentUserName = userId;
+
+                    source.addEventListener('open', function (e) {
+                        console.log("建立连接。。。");
+                    }, false);
+
+                    source.addEventListener('add', function (e) {
+
+                        // console.log("add事件...");
+                        console.log(e.data);
+                        var receiveMsg = e.data;
+
+                        var botMsgId = me.botMsgId;
+
+
+                        var needNew = true;
+                        for (var i = 0; i < me.chatList.length; i++) {
+                            var chatItem = me.chatList[i];
+                            if (chatItem.botMsgId == botMsgId) {
+                                needNew = false;
+                            }
+                        }
+
+
+                        // if (botMsgId == null || botMsgId == '') {
+                        if (needNew) {
+                            // botMsgId = me.generateRandomId(12);
+                            me.botMsgId = botMsgId;
+                            // console.log("botMsgId = " + botMsgId);
+
+                            // 为空，创建新对象
+                            var newBotContent = {
+                                id: "temp",
+                                content: receiveMsg,
+                                // time: '2023-05-01 12:00:00',
+                                userName: 'bot',
+                                chatType: 'bot',
+                                botMsgId: botMsgId,
+                            };
+                            me.chatList.push(newBotContent);
+
+                        } else {
+                            // console.log("botMsgId 不为空...");
+                            // console.log("botMsgId = " + botMsgId);
+
+                            // 不为空，找到对应的聊天记录流式插入数据
+                            for (var i = 0; i < me.chatList.length; i++) {
+                                var chatItem = me.chatList[i];
+                                if (chatItem.botMsgId == botMsgId) {
+                                    // 找到对应的聊天记录流式插入数据
+                                    chatItem.content += receiveMsg;
+                                }
+                            }
+                        }
+
+                        // TTS处理 - 使用缓冲策略处理流式文本
+                        if (me.ttsEnabled && receiveMsg && receiveMsg.trim()) {
+                            me.addToTextBuffer(receiveMsg);
+                        }
+
+                        me.scrollToBottom();
+                    });
+
+                    source.addEventListener('finish', function (e) {
+                        console.log("finish事件...");
+                        console.log(e.data);
+                        var chatResponse = JSON.parse(e.data);
+                        var message = chatResponse.message;
+                        var botMsgId = chatResponse.botMsgId;
+
+                        // var test = marked.parse(e.data);
+                        // console.log(test);
+
+                        for (var i = 0; i < me.chatList.length; i++) {
+                            var chatItem = me.chatList[i];
+                            if (chatItem.botMsgId == botMsgId) {
+                                // 找到对应的聊天记录并且转换成html
+                                chatItem.content = marked.parse(message);
+                            }
+                        }
+
+                        me.botMsgId = null;
+
+                        // TTS处理 - 流式结束后处理剩余缓冲区文本
+                        if (me.ttsEnabled) {
+                            me.flushTextBuffer();
+                        }
+
+                        me.scrollToBottom();
+                    });
+
+                    source.addEventListener('error', function (e) {
+                        console.log("error事件...");
+                        console.log("e.readyState: " + source.readyState);
+
+                        if (e.readyState === EventSource.CLOSED) {
+                            console.log('connection is closed');
+                        } else {
+                            console.log("Error occured", event);
+                        }
+                        // close方法用于关闭连接
+                        source.close();
+                    });
+
+                    source.addEventListener("customEvent", function (e) {
+                        console.log(e.lastEventId);
+                        console.log(e.data);
+                    }, false);
+                } else {
+                    console.log("浏览器不支持SSE");
+                }
+            },
+
+            handleKeyDown(event) {
+                if (event.key === 'Enter') {
+                    this.doChat();
+                }
+            },
+
+            doChat() {
+                var me = this;
+                // 如果 currentUserName 为空，使用之前生成的 userId
+                var currentUserName = this.currentUserName
+
+                var botMsgId = me.generateRandomId(12);
+                me.botMsgId = botMsgId;
+
+                const userInput = document.getElementById('user-input').value;
+                var pendingMsg = userInput.trim();
+                if (pendingMsg === '') return;
+
+                // 发送消息到后端
+                var singleChat = {
+                    currentUserName: currentUserName,
+                    message: pendingMsg,
+                    botMsgId: botMsgId
+                };
+
+                var internetSearchSelected = this.internetSearchSelected;
+                var knowledgeSearchSelected = this.knowledgeSearchSelected;
+
+                if (knowledgeSearchSelected && !internetSearchSelected) {
+                    console.log("ragSearch");
+                    doctorApi.ragSearch(singleChat);
+                } else if (!knowledgeSearchSelected && internetSearchSelected) {
+                    console.log("internetSearch");
+                    doctorApi.internetSearch(singleChat);
+                } else {
+                    console.log("doChat");
+                    doctorApi.doChat(singleChat);
+                }
+
+                var newUserContent = {
+                    content: pendingMsg,
+                    userName: currentUserName,
+                    chatType: 'user',
+                }
+                this.chatList.push(newUserContent);
+
+                document.getElementById('user-input').value = '';
+            },
+
+            generateRandomId(length) {
+                const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                let result = '';
+                const charactersLength = characters.length;
+                for (let i = 0; i < length; i++) {
+                    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+                }
+                return result;
+            },
+
+            scrollToBottom() {
+                const chatMessages = document.getElementById('chat-messages');
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            },
+
+            doInternetSearch(internetSearchSelected) {
+                this.internetSearchSelected = !internetSearchSelected;
+
+                if (this.internetSearchSelected) {
+                    this.knowledgeSearchSelected = false;
+                    this.imageReadSelected = false;
+                }
+            },
+
+            doKnowledgeSearch(knowledgeSearchSelected) {
+                this.knowledgeSearchSelected = !knowledgeSearchSelected;
+
+                if (this.knowledgeSearchSelected) {
+                    this.internetSearchSelected = false;
+                    this.imageReadSelected = false;
+                }
+            },
+
+            doImageRead(imageReadSelected) {
+                this.imageReadSelected = !imageReadSelected;
+
+                if (this.imageReadSelected) {
+                    this.knowledgeSearchSelected = false;
+                    this.internetSearchSelected = false;
+                }
+            },
+
+            // ========== TTS相关方法 ==========
+
+            // 初始化TTS
+            initTTS() {
+                console.log("初始化TTS...");
+                if ('speechSynthesis' in window) {
+                    this.speechSynthesis = window.speechSynthesis;
+                    this.loadVoices();
+
+                    // 监听voices改变事件
+                    if (speechSynthesis.onvoiceschanged !== undefined) {
+                        speechSynthesis.onvoiceschanged = () => {
+                            this.loadVoices();
+                        };
+                    }
+                } else {
+                    console.warn('当前浏览器不支持语音合成API');
+                    this.$message && this.$message.warning('当前浏览器不支持语音合成功能');
+                }
+            },
+
+            // 加载可用声音
+            loadVoices() {
+                const voices = this.speechSynthesis.getVoices();
+                this.availableVoices = voices.filter(voice =>
+                    voice.lang.includes('zh') || voice.lang.includes('en')
+                );
+
+                // 默认选择中文声音，如果没有则选择第一个
+                if (this.availableVoices.length > 0) {
+                    const chineseVoice = this.availableVoices.find(voice =>
+                        voice.lang.includes('zh') || voice.name.includes('Chinese')
+                    );
+                    this.selectedVoice = chineseVoice || this.availableVoices[0];
+                }
+
+                console.log('可用声音:', this.availableVoices);
+            },
+
+            // 切换TTS开关
+            toggleTTS() {
+                this.ttsEnabled = !this.ttsEnabled;
+                if (this.ttsEnabled) {
+                    console.log('TTS已启用');
+                    this.$message && this.$message.success('语音播报已启用');
+                } else {
+                    console.log('TTS已禁用');
+                    this.stopTTS();
+                    this.$message && this.$message.info('语音播报已禁用');
+                }
+            },
+
+            // 添加文本到缓冲区（新的流式TTS处理方法）
+            addToTextBuffer(text) {
+                if (!this.ttsEnabled || !text || !text.trim()) return;
+
+                // 更新最后接收时间
+                this.lastReceiveTime = Date.now();
+
+                // 将文本添加到缓冲区
+                this.textBuffer += text;
+
+                // 清除之前的超时定时器
+                if (this.bufferTimeout) {
+                    clearTimeout(this.bufferTimeout);
+                }
+
+                // 检查是否遇到句子结束符，如果是则立即处理
+                if (this.shouldFlushBuffer(this.textBuffer)) {
+                    this.flushTextBuffer();
+                } else {
+                    // 设置延迟处理，防止文本流中断太久
+                    this.bufferTimeout = setTimeout(() => {
+                        if (this.textBuffer.trim()) {
+                            this.flushTextBuffer();
+                        }
+                    }, 1500); // 1.5秒后强制处理缓冲区
+                }
+            },
+
+            // 判断是否应该刷新缓冲区
+            shouldFlushBuffer(text) {
+                // 检查是否包含句子结束符
+                const sentenceEnders = /[。！？.!?]+[\s]*$/;
+                if (sentenceEnders.test(text.trim())) {
+                    return true;
+                }
+
+                // 检查是否包含段落分隔符
+                const paragraphBreaks = /\n\s*\n|\r\n\s*\r\n/;
+                if (paragraphBreaks.test(text)) {
+                    return true;
+                }
+
+                // 缓冲区太长时强制处理（避免句子过长）
+                if (text.length > 200) {
+                    return true;
+                }
+
+                return false;
+            },
+
+            // 刷新文本缓冲区到语音队列
+            flushTextBuffer() {
+                if (!this.textBuffer.trim()) return;
+
+                const bufferedText = this.textBuffer.trim();
+                this.textBuffer = ''; // 清空缓冲区
+
+                // 清除超时定时器
+                if (this.bufferTimeout) {
+                    clearTimeout(this.bufferTimeout);
+                    this.bufferTimeout = null;
+                }
+
+                // 将缓冲的文本按句子分割并添加到语音队列
+                this.processSentences(bufferedText);
+            },
+
+            // 处理句子，按标点符号分割
+            processSentences(text) {
+                // 按句子分割（中英文标点）
+                const sentences = text.split(/([。！？.!?]+)/).filter(s => s.trim());
+                let currentSentence = '';
+
+                for (let i = 0; i < sentences.length; i++) {
+                    const part = sentences[i];
+                    currentSentence += part;
+
+                    // 如果是标点符号或已到最后一个片段，则处理当前句子
+                    if (/[。！？.!?]+/.test(part) || i === sentences.length - 1) {
+                        if (currentSentence.trim()) {
+                            this.addToSpeechQueue(currentSentence.trim());
+                            currentSentence = '';
+                        }
+                    }
+                }
+            },
+
+            // 添加文本到语音队列
+            addToSpeechQueue(text) {
+                if (!this.ttsEnabled || !text || !text.trim()) return;
+
+                // 清理文本，移除markdown标记和特殊字符
+                const cleanText = this.cleanTextForSpeech(text);
+                if (!cleanText) return;
+
+                this.speechQueue.push(cleanText);
+                this.processSpeechQueue();
+            },
+
+            // 清理文本用于语音合成
+            cleanTextForSpeech(text) {
+                if (!text) return '';
+
+                return text
+                    .replace(/[#*`_~\[\]()]/g, '') // 移除markdown标记
+                    .replace(/\s+/g, ' ') // 合并多个空格
+                    .replace(/[^\u4e00-\u9fa5\u3400-\u4dbf\uf900-\ufaff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af\u0100-\u017f\u1e00-\u1eff\u0180-\u024f\u1ea0-\u1ef9a-zA-Z0-9\s\.,!?;:""''（）。，！？；：]/g, '') // 保留中英文、数字和常用标点
+                    .trim();
+            },
+
+            // 处理语音队列
+            processSpeechQueue() {
+                if (this.isProcessingQueue || this.speechQueue.length === 0 || !this.ttsEnabled) {
+                    return;
+                }
+
+                this.isProcessingQueue = true;
+                const text = this.speechQueue.shift();
+
+                if (text && text.length > 0) {
+                    this.speak(text);
+                }
+            },
+
+            // 语音合成核心方法
+            speak(text) {
+                if (!this.speechSynthesis || !text) {
+                    this.isProcessingQueue = false;
+                    return;
+                }
+
+                // 停止当前播放
+                this.speechSynthesis.cancel();
+
+                const utterance = new SpeechSynthesisUtterance(text);
+
+                // 设置语音参数
+                utterance.rate = parseFloat(this.speechRate);
+                utterance.pitch = parseFloat(this.speechPitch);
+                utterance.volume = 1.0;
+
+                if (this.selectedVoice) {
+                    utterance.voice = this.selectedVoice;
+                    utterance.lang = this.selectedVoice.lang;
+                }
+
+                // 设置事件监听
+                utterance.onstart = () => {
+                    console.log('开始播放:', text);
+                    this.isSpeaking = true;
+                    this.currentUtterance = utterance;
+                };
+
+                utterance.onend = () => {
+                    console.log('播放结束:', text);
+                    this.isSpeaking = false;
+                    this.currentUtterance = null;
+                    this.isProcessingQueue = false;
+
+                    // 继续处理队列
+                    setTimeout(() => {
+                        this.processSpeechQueue();
+                    }, 100);
+                };
+
+                utterance.onerror = (event) => {
+                    console.error('语音合成错误:', event.error);
+                    this.isSpeaking = false;
+                    this.currentUtterance = null;
+                    this.isProcessingQueue = false;
+
+                    // 继续处理队列
+                    setTimeout(() => {
+                        this.processSpeechQueue();
+                    }, 100);
+                };
+
+                // 开始语音合成
+                this.speechSynthesis.speak(utterance);
+            },
+
+            // 暂停/继续TTS
+            pauseTTS() {
+                if (!this.speechSynthesis) return;
+
+                if (this.isSpeaking) {
+                    this.speechSynthesis.pause();
+                    this.isSpeaking = false;
+                    console.log('语音已暂停');
+                } else {
+                    this.speechSynthesis.resume();
+                    this.isSpeaking = true;
+                    console.log('语音已继续');
+                }
+            },
+
+            // 停止TTS
+            stopTTS() {
+                if (!this.speechSynthesis) return;
+
+                this.speechSynthesis.cancel();
+                this.isSpeaking = false;
+                this.currentUtterance = null;
+                this.speechQueue = [];
+                this.isProcessingQueue = false;
+
+                // 清理缓冲区相关状态
+                this.textBuffer = '';
+                if (this.bufferTimeout) {
+                    clearTimeout(this.bufferTimeout);
+                    this.bufferTimeout = null;
+                }
+
+                console.log('语音已停止，缓冲区已清理');
+            },
+
+            // 更新声音
+            updateVoice() {
+                console.log('声音已更换为:', this.selectedVoice ? this.selectedVoice.name : '默认');
+            },
+        }
+    });
+
+</script>

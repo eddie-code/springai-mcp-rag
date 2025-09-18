@@ -1,5 +1,6 @@
 package org.dromara.service;
 
+import org.dromara.bean.ChatEntity;
 import org.springframework.ai.chat.model.ChatResponse;
 import reactor.core.publisher.Flux;
 
@@ -32,5 +33,12 @@ public interface IChatService {
      * @return
      */
     Flux<String> streamStr(String prompt);
+
+    /**
+     * 和大模型交互
+     * @param chatEntity
+     * @return
+     */
+    void deepSeekChat(ChatEntity chatEntity);
 
 }
