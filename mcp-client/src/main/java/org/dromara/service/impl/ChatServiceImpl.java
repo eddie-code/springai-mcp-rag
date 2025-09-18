@@ -1,7 +1,9 @@
 package org.dromara.service.impl;
 
+import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.dromara.bean.ChatEntity;
+import org.dromara.bean.ChatResponseEntity;
 import org.dromara.enums.SSEMsgType;
 import org.dromara.service.IChatService;
 import org.dromara.utils.SSEServer;
@@ -69,6 +71,11 @@ public class ChatServiceImpl implements IChatService {
         return chatClient.prompt(prompt).stream().content();
     }
 
+    /**
+     * 执行DeepSeek聊天对话处理
+     *
+     * @param chatEntity 聊天实体对象，包含用户信息、消息内容和机器人消息ID等信息
+     */
     @Override
     public void deepSeekChat(ChatEntity chatEntity) {
 
@@ -76,8 +83,10 @@ public class ChatServiceImpl implements IChatService {
         String prompt = chatEntity.getMessage();
         String botMsgId = chatEntity.getBotMsgId();
 
-        // 返回的是deepSeek的应答内容
+        // 调用chatClient获取DeepSeek的流式响应
         Flux<String> stringFlux = chatClient.prompt(prompt).stream().content();
+
+        // 处理流式响应数据，逐个发送给客户端并收集完整内容
         List<String> list = stringFlux.toStream().map(chatResponse -> {
             String content = chatResponse.toString();
             SSEServer.sendMsg(userId, content, SSEMsgType.ADD);
@@ -85,6 +94,16 @@ public class ChatServiceImpl implements IChatService {
             return content;
         }).collect(Collectors.toList());
 
+        // 将所有响应内容拼接成完整字符串
+        String fullContent = list.stream().collect(Collectors.joining());
+        // fullContent 可以保存到数据库, 看业务需求
+
+        // 构造最终响应实体并发送完成消息给客户端
+        ChatResponseEntity chatResponseEntity = new ChatResponseEntity(fullContent, botMsgId);
+
+        SSEServer.sendMsg(userId, JSONUtil.toJsonStr(chatResponseEntity), SSEMsgType.FINISH);
+
     }
+
 
 }
