@@ -11,6 +11,23 @@ spring:
       chat:
         options:
           model: ${OPENAI_MODEL}
+    # 向量存储配置
+    # 配置Redis作为向量存储后端的相关参数
+    vectorstore:
+      redis:
+        # Redis键名前缀，用于区分不同类型的embedding数据
+        prefix: 'embedding:'
+        # Redis中向量索引的名称
+        index-name: lee-vectorstore
+        # 是否在启动时初始化Redis搜索模式(schema)
+        initialize-schema: true
+  data:
+    redis:
+      host: 192.168.56.101
+      port: 6379
+      password: redis123
+      database: 10
+      timeout: 30
 
 logging:
   level:
