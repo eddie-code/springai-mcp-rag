@@ -6,29 +6,26 @@ spring:
   ai:
     openai:
       api-key: ${OPENAI_API_KEY}
-      ## 首次调用API： https://api-docs.deepseek.com/zh-cn/
       base-url: ${OPENAI_BASE_URL}
       chat:
         options:
           model: ${OPENAI_MODEL}
-    # 向量存储配置
-    # 配置Redis作为向量存储后端的相关参数
     vectorstore:
       redis:
-        # Redis键名前缀，用于区分不同类型的embedding数据
-        prefix: 'embedding:'
-        # Redis中向量索引的名称
-        index-name: lee-vectorstore
-        # 是否在启动时初始化Redis搜索模式(schema)
-        initialize-schema: true
+        initialize-schema: true  # 是否初始化所需的模式， 如出现 404 错误, 需要手动创建索引
+        index-name: lee-vectorstore  # 用于存储向量的索引名称
+        prefix: 'embedding:'  # Redis 键的前缀
   data:
     redis:
       host: 192.168.56.101
       port: 6379
       password: redis123
-      database: 10
-      timeout: 30
+#      database: 0
 
 logging:
   level:
     root: info
+    org.springframework.ai: DEBUG
+    org.springframework.web.client: DEBUG
+    org.springframework.ai.vectorstore: TRACE
+    org.springframework.ai.embedding: TRACE

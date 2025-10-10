@@ -1,13 +1,17 @@
 package org.dromara;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import org.springframework.ai.model.transformers.autoconfigure.TransformersEmbeddingModelAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationListener;
 
 /**
  * Hello world!
  */
-@SpringBootApplication
+//@SpringBootApplication
+@SpringBootApplication(exclude = {TransformersEmbeddingModelAutoConfiguration.class})
 public class App {
     public static void main(String[] args) {
         //System.out.println("Hello World!");
@@ -18,7 +22,7 @@ public class App {
         dotenv.entries().forEach(dotenvEntry ->
                 System.setProperty(dotenvEntry.getKey(), dotenvEntry.getValue())
         );
-
+//        System.setProperty("spring.ai.cache.enabled", "false");
         SpringApplication.run(App.class, args);
     }
 }

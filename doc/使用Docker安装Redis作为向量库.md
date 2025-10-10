@@ -2,6 +2,8 @@
 
 # 目录
 
+`必须使用 redis-stack 才能完成向量库`
+
 ## redis与redis-stack的镜像区别
 
 ### Redis 镜像对比
@@ -38,12 +40,22 @@ docker run -d --name redis-stack -p 6379:6379 -e REDIS_ARGS="--requirepass 12345
 services:
   redis:
     image: redis/redis-stack:latest
-    container name: redis-stack
+    container_name: "redis"
+    environment:
+      - TZ=Asia/Shanghai
+      - REDIS_ARGS=--requirepass redis123 --appendonly yes
     ports:
-      -"6379:6379"
+      - "6379:6379"
+      - "8001:8001"
     volumes:
-      - ./redis/data:/data
-      - restart:unless-stopped
+      - ./data/redis/data:/data
+    restart: always
+    networks:
+      - datasource_network
+
+networks:
+  datasource_network:
+    driver: bridge
 ```
 
 ```shell
