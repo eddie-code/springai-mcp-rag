@@ -1,13 +1,23 @@
 package org.dromara.service.impl;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.dromara.service.IDocumentService;
+import org.dromara.utils.CustomTextSpliter;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.TextReader;
+import org.springframework.ai.retry.NonTransientAiException;
+import org.springframework.ai.transformer.splitter.TokenTextSplitter;
+import org.springframework.ai.vectorstore.redis.RedisVectorStore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import redis.clients.jedis.JedisPooled;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 
 /**
  * @author lee
@@ -15,7 +25,10 @@ import java.util.List;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class DocumentServiceImpl implements IDocumentService {
+
+    private final RedisVectorStore redisVectorStore;
 
     /**
      * 加载文本资源并转换为文档列表
@@ -33,8 +46,22 @@ public class DocumentServiceImpl implements IDocumentService {
         // 获取并返回文档列表
         List<Document> documents = textReader.get();
 
-        log.info("加载文本资源并转换为文档列表: {}", documents);
+//        log.info("加载文本资源并转换为文档列表: {}", documents);
 
+        // 默认的文本切分器：创建TokenTextSplitter实例，用于将文档按照token进行分割
+//        TokenTextSplitter tokenTextSplitter = new TokenTextSplitter();
+
+        // 自定义的切分
+        CustomTextSpliter tokenTextSplitter = new CustomTextSpliter();
+        // 应用token分割器处理文档列表，将输入的文档集合转换为分割后的文档列表
+        List<Document> list = tokenTextSplitter.apply(documents);
+
+        log.info("应用token分割器处理文档Size: {}", list.size());
+        log.info("应用token分割器处理文档列表: {}", list);
+        log.info("===============================");
+
+        redisVectorStore.add(list);
+        log.info("文档成功添加到向量存储");
         return documents;
     }
 

@@ -10,22 +10,40 @@ spring:
       chat:
         options:
           model: ${OPENAI_MODEL}
+      embedding:
+        options:
+          model: text-embedding-v2
+#    embedding:
+#      transformer:
+#        tokenizer:
+#          uri: classpath:/onnx/all-MiniLM-L6-v2/tokenizer.json
+#        onnx:
+#          modelUri: classpath:/onnx/all-MiniLM-L6-v2/model.onnx
+#          modelOutputName: token_embeddings
+#        cache:
+#          enabled: true
+#          directory: classpath:/onnx
     vectorstore:
       redis:
-        initialize-schema: true  # 是否初始化所需的模式， 如出现 404 错误, 需要手动创建索引
-        index-name: lee-vectorstore  # 用于存储向量的索引名称
-        prefix: 'embedding:'  # Redis 键的前缀
+        initialize-schema: true
+        index-name: lee-vectorstore
+        prefix: 'embedding:'
   data:
     redis:
       host: 192.168.56.101
       port: 6379
       password: redis123
-#      database: 0
+      timeout: 10s
+      lettuce:
+        pool:
+          max-active: 8
+          max-wait: -1ms
+          max-idle: 8
+          min-idle: 0
 
 logging:
   level:
     root: info
-    org.springframework.ai: DEBUG
-    org.springframework.web.client: DEBUG
-    org.springframework.ai.vectorstore: TRACE
-    org.springframework.ai.embedding: TRACE
+    org.springframework.ai: TRACE
+    org.springframework.ai.transformer: TRACE
+    ai.onnxruntime: TRACE
