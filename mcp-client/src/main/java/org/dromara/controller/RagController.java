@@ -29,4 +29,9 @@ public class RagController {
         return Result.ok(list);
     }
 
+    @GetMapping("/doSearch")
+    public Result doSearch(@RequestParam String question){
+        return Result.ok(documentService.doSearch(question));
+    }
+
 }

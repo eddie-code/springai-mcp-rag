@@ -20,5 +20,11 @@ public interface IDocumentService {
      */
     List<Document> loadText(Resource resource, String fileName);
 
+    /**
+     * @param question
+     * @return
+     */
+    List<Document> doSearch(String question);
+
 
 }

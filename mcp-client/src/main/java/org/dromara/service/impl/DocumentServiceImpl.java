@@ -8,6 +8,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.TextReader;
 import org.springframework.ai.retry.NonTransientAiException;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.redis.RedisVectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -63,6 +64,20 @@ public class DocumentServiceImpl implements IDocumentService {
         redisVectorStore.add(list);
         log.info("文档成功添加到向量存储");
         return documents;
+    }
+
+    @Override
+    public List<Document> doSearch(String question) {
+        log.info("搜索问题: {}", question);
+        // 构建搜索请求，设置查询文本和返回的文档数量
+        SearchRequest request = SearchRequest.builder()
+                .query(question)
+                .topK(3)
+                .build();
+        List<Document> results = redisVectorStore.similaritySearch(request);
+        log.info("搜索结果数量: {}", results.size());
+        log.info("搜索结果: {}", results);
+        return results;
     }
 
 }
