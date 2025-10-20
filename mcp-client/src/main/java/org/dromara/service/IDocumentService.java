@@ -21,6 +21,8 @@ public interface IDocumentService {
     List<Document> loadText(Resource resource, String fileName);
 
     /**
+     * 根据提问从知识库中查询相应的知识/资料(相似)
+     *
      * @param question
      * @return
      */

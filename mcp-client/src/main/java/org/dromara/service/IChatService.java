@@ -2,7 +2,10 @@ package org.dromara.service;
 
 import org.dromara.bean.ChatEntity;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.document.Document;
 import reactor.core.publisher.Flux;
+
+import java.util.List;
 
 /**
  * @author lee
@@ -36,9 +39,18 @@ public interface IChatService {
 
     /**
      * 和大模型交互
+     *
      * @param chatEntity
      * @return
      */
     void deepSeekChat(ChatEntity chatEntity);
+
+    /**
+     * Rag知识库检索汇总给大模型输出
+     *
+     * @param chatEntity
+     * @param ragContext
+     */
+    void doChatRagSearch(ChatEntity chatEntity, List<Document> ragContext);
 
 }
