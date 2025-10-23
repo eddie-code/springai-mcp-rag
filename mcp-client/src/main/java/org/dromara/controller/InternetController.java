@@ -1,11 +1,10 @@
 package org.dromara.controller;
 
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
+import org.dromara.bean.ChatEntity;
 import org.dromara.service.SearXngService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @author lee
@@ -25,5 +24,10 @@ public class InternetController {
         return searXngService.search(query);
     }
 
+    @PostMapping("search")
+    public void search(@RequestBody ChatEntity chatEntity, HttpServletResponse response){
+        response.setCharacterEncoding("UTF-8");
+//        chatService.doInternetSearch(chatEntity);
+    }
 
 }
