@@ -48,3 +48,9 @@ logging:
     org.springframework.ai: TRACE
     org.springframework.ai.transformer: TRACE
     ai.onnxruntime: TRACE
+
+internet:
+  websearch:
+    searxng:
+      url: http://192.168.56.101:6080/search
+      count: 10  # 15-25
