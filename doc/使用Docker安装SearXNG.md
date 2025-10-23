@@ -62,3 +62,19 @@ round-trip min/avg/max = 11.400/12.751/13.742 ms
 ## 访问页面
 
 http://localhost:6080
+
+## 请求注意 
+
+### 浏览器
+
+正常
+
+### APIFox OR POSTMAN
+
+出现 500 错误，后来在浏览器cURL复制了，在导入了APIFox里面。发现`请求头的Cookie`有变化
+
+```text
+categories=general; language=zh-CN; locale=zh-Hans-CN; autocomplete=; favicon_resolver=; image_proxy=0; method=POST; safesearch=0; theme=simple; results_on_new_tab=0; doi_resolver=oadoi.org; simple_style=auto; center_alignment=0; advanced_search=0; query_in_title=0; infinite_scroll=0; search_on_category_select=1; hotkeys=default; url_formatting=pretty; disabled_engines="wikipedia__general\054currency__general\054wikidata__general\054duckduckgo__general\054google__general\054lingva__general\054startpage__general\054dictzone__general\054mymemory translated__general\054brave__general"; enabled_engines="baidu__general\054bing__general\054sogou__general"; disabled_plugins=; enabled_plugins=; tokens=
+```
+
+添加Cookie后，就能正常使用。
