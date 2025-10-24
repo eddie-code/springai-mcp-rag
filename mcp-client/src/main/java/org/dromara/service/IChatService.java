@@ -53,4 +53,11 @@ public interface IChatService {
      */
     void doChatRagSearch(ChatEntity chatEntity, List<Document> ragContext);
 
+    /**
+     * 基于searxng的实时联网搜索
+     *
+     * @param chatEntity
+     */
+    void doInternetSearch(ChatEntity chatEntity);
+
 }

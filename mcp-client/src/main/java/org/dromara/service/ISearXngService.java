@@ -8,7 +8,7 @@ import java.util.List;
  * @author lee
  * @description
  */
-public interface SearXngService {
+public interface ISearXngService {
 
     /**
      * 调用本地搜索引擎-SearXng进行搜索

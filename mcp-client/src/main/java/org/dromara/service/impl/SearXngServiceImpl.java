@@ -9,14 +9,12 @@ import okhttp3.Request;
 import okhttp3.Response;
 import org.dromara.bean.SearXNGResponse;
 import org.dromara.bean.SearchResult;
-import org.dromara.service.SearXngService;
+import org.dromara.service.ISearXngService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -28,7 +26,7 @@ import java.util.List;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class SearXngServiceImpl implements SearXngService {
+public class SearXngServiceImpl implements ISearXngService {
 
     @Value("${internet.websearch.searxng.url}")
     private String SEARXNG_URL;
