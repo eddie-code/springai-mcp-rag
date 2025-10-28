@@ -31,18 +31,29 @@ public class SSEServer {
     public static SseEmitter connect(String userId) {
 
         // 设置超时时间, 0L表示不超时（永不过期）; 默认：30s, 超时未完成的任务则会抛出异常
-        SseEmitter sseEmitter = new SseEmitter(0L);
+        //SseEmitter sseEmitter = new SseEmitter(0L);
+
+        // 设置合理的超时时间（建议30秒-5分钟）
+        SseEmitter sseEmitter = new SseEmitter(5 * 60 * 1000L); // 5分钟
 
         // 注册回调方法
-        sseEmitter.onTimeout(timeoutCallback(userId));
-        // 完成
-        sseEmitter.onCompletion(completionCallback(userId));
-        // 异常
-        sseEmitter.onError(errorCallback(userId));
+        sseEmitter.onCompletion(() -> {
+            log.info("SSE连接完成: {}", userId);
+            remove(userId);
+        });
+
+        sseEmitter.onTimeout(() -> {
+            log.info("SSE连接超时: {}", userId);
+            remove(userId);
+        });
+
+        sseEmitter.onError(error -> {
+            log.error("SSE连接异常, 用户ID: {}, 错误: {}", userId, error.getMessage());
+            remove(userId);
+        });
 
         sseClients.put(userId, sseEmitter);
-
-        log.info("SSE连接创建成功, 连接的用户ID为：{}", userId);
+        log.info("SSE连接创建成功, 用户ID: {}", userId);
 
         return sseEmitter;
     }
@@ -95,9 +106,16 @@ public class SSEServer {
      * @param userId 需要移除的用户ID
      */
     public static void remove(String userId) {
-        // 删除用户
-        sseClients.remove(userId);
-        log.info("SSE连接被移除, 移除的用户ID为：{}", userId);
+        Object emitterObj = sseClients.remove(userId);
+        if (emitterObj instanceof SseEmitter) {
+            SseEmitter sseEmitter = (SseEmitter) emitterObj;
+            try {
+                sseEmitter.complete();
+            } catch (Exception e) {
+                log.debug("SSE连接完成时发生异常: {}", e.getMessage());
+            }
+        }
+        log.info("SSE连接被移除, 用户ID: {}", userId);
     }
 
     /**
@@ -110,14 +128,25 @@ public class SSEServer {
      */
     private static void sendEmitterMessage(SseEmitter sseEmitter, String userId, String message, SSEMsgType msgType) {
         try {
-            // 构建SSE事件消息
+            // 检查连接是否还有效
+            if (sseEmitter == null) {
+                remove(userId);
+                return;
+            }
+
             SseEmitter.SseEventBuilder msgEvent = SseEmitter.event()
                     .id(userId)
                     .data(message)
-                    .name(msgType.type);
+                    .name(msgType.type)
+                    .reconnectTime(5000L); // 添加重连时间
+
             sseEmitter.send(msgEvent);
+
         } catch (IOException e) {
-            log.error("SSE发送消息异常：{}", e.getMessage());
+            log.error("SSE发送消息异常, 用户ID: {}, 错误: {}", userId, e.getMessage());
+            remove(userId);
+        } catch (Exception e) {
+            log.error("SSE发送消息未知异常, 用户ID: {}, 错误: {}", userId, e.getMessage());
             remove(userId);
         }
     }
@@ -158,6 +187,24 @@ public class SSEServer {
         });
     }
 
+    /**
+     * 心跳检测，保持连接活跃
+     */
+    public static void sendHeartbeat(String userId) {
+        if (sseClients.containsKey(userId)) {
+            SseEmitter sseEmitter = (SseEmitter) sseClients.get(userId);
+            try {
+                sseEmitter.send(SseEmitter.event()
+                        .id(userId)
+                        .data("heartbeat")
+                        .name("heartbeat")
+                        .reconnectTime(30000L));
+            } catch (IOException e) {
+                log.warn("心跳发送失败, 用户ID: {}", userId);
+                remove(userId);
+            }
+        }
+    }
 
 }
 
