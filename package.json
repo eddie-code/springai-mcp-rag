@@ -1,0 +1,23 @@
+{
+  "name": "springai-mcp-rag",
+  "version": "1.0.0",
+  "description": "docker exec -it redis bash",
+  "main": "index.js",
+  "directories": {
+    "doc": "doc"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eddie-code/springai-mcp-rag.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/eddie-code/springai-mcp-rag/issues"
+  },
+  "homepage": "https://github.com/eddie-code/springai-mcp-rag#readme"
+}

@@ -4,6 +4,23 @@ spring:
   profiles:
     active: dev
   ai:
+    mcp:
+      client:
+        connection-timeout: 120s  # 增加到120秒
+        request-timeout: 60s     # 增加到60秒
+        enabled: true
+        name: spring-ai-mcp-client
+        type: ASYNC
+        sse:
+          connections:
+            server1:
+              url: https://mcp.amap.com
+              sse-endpoint: /sse?key=${GAODE_SSE_MCP_KEY}
+        #            server2:
+        #              url: http://localhost:9060
+        #              sse-endpoint: /sse
+        stdio:
+          servers-configuration: classpath:mcp-server.json
     openai:
       api-key: ${OPENAI_API_KEY}
       base-url: ${OPENAI_BASE_URL}
@@ -13,16 +30,16 @@ spring:
       embedding:
         options:
           model: text-embedding-v2
-#    embedding:
-#      transformer:
-#        tokenizer:
-#          uri: classpath:/onnx/all-MiniLM-L6-v2/tokenizer.json
-#        onnx:
-#          modelUri: classpath:/onnx/all-MiniLM-L6-v2/model.onnx
-#          modelOutputName: token_embeddings
-#        cache:
-#          enabled: true
-#          directory: file:/onnx
+    #    embedding:
+    #      transformer:
+    #        tokenizer:
+    #          uri: classpath:/onnx/all-MiniLM-L6-v2/tokenizer.json
+    #        onnx:
+    #          modelUri: classpath:/onnx/all-MiniLM-L6-v2/model.onnx
+    #          modelOutputName: token_embeddings
+    #        cache:
+    #          enabled: true
+    #          directory: file:/onnx
     vectorstore:
       redis:
         # 必须启动时候自动创建'索引', 不然会出现查询不到数据等问题
@@ -45,9 +62,6 @@ spring:
 logging:
   level:
     root: info
-    org.springframework.ai: TRACE
-    org.springframework.ai.transformer: TRACE
-    ai.onnxruntime: TRACE
 
 internet:
   websearch:

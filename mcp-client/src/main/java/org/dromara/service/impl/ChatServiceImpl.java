@@ -14,6 +14,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
@@ -36,9 +37,17 @@ public class ChatServiceImpl implements IChatService {
     private String systemPrompt = "你是一个非常聪明的人工智能助手，可以帮我解决很多问题，我为你取一个名字，你的名字叫‘小爱同学’";
 
     // 构造器注入，自动配置方式（推荐）
-    public ChatServiceImpl(ChatClient.Builder chatClientBuilder) {
-        this.chatClient = chatClientBuilder
-                .defaultSystem(systemPrompt) // 可选项： 系统提示词而已， 不加就会返回 DeepSeek 的默认回复
+//    public ChatServiceImpl(ChatClient.Builder chatClientBuilder) {
+//        this.chatClient = chatClientBuilder
+//                .defaultSystem(systemPrompt) // 可选项： 系统提示词而已， 不加就会返回 DeepSeek 的默认回复
+//                .build();
+//    }
+
+    //构造器注入，自动配置方式(推荐)  MCP
+    public ChatServiceImpl(ChatClient.Builder chatclientBuilder, ToolCallbackProvider tools) {
+        this.chatClient = chatclientBuilder
+                .defaultToolCallbacks(tools) // 查看mcp是否成功，查看tools里面的serverInfo内容
+                .defaultSystem(systemPrompt)
                 .build();
     }
 
@@ -242,8 +251,8 @@ public class ChatServiceImpl implements IChatService {
     /**
      * 构建SearXNG搜索的提示词
      *
-     * @param question       用户提出的问题
-     * @param searchResults  SearXNG搜索结果列表
+     * @param question      用户提出的问题
+     * @param searchResults SearXNG搜索结果列表
      * @return 格式化后的完整提示词字符串
      */
     private static String buildSearXNGPrompt(String question, List<SearchResult> searchResults) {
