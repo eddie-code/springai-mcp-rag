@@ -17,7 +17,7 @@ spring:
               url: https://mcp.amap.com
               sse-endpoint: /sse?key=${GAODE_SSE_MCP_KEY}
             server2:
-              url: http://localhost:9060
+              url: http://localhost:9060 # 本地的mcp-server
               sse-endpoint: /sse
         stdio:
           servers-configuration: classpath:mcp-server.json

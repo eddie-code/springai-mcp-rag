@@ -1,6 +1,6 @@
 package com.test;
 
-import org.dromara.App;
+import org.dromara.McpClientApplication;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.transformers.TransformersEmbeddingModel;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,7 +12,7 @@ import java.util.Map;
  * @author lee
  * @description
  */
-@SpringBootTest(classes = App.class)
+@SpringBootTest(classes = McpClientApplication.class)
 public class TimeTest {
 
     @Test

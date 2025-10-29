@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: spring-ai-mcp-server
+  profiles:
+    active: dev
+  ai:
+    mcp:
+      server:
+        name: spring-ai-mcp-server-sse # MCP服务器名称
+        version: 1.0.0 # 服务器版本号
+        sse-endpoint: /sse
+        type: async
+
+logging:
+  level:
+    root: info
