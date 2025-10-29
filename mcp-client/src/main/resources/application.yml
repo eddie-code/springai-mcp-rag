@@ -16,9 +16,9 @@ spring:
             server1:
               url: https://mcp.amap.com
               sse-endpoint: /sse?key=${GAODE_SSE_MCP_KEY}
-        #            server2:
-        #              url: http://localhost:9060
-        #              sse-endpoint: /sse
+            server2:
+              url: http://localhost:9060
+              sse-endpoint: /sse
         stdio:
           servers-configuration: classpath:mcp-server.json
     openai:
@@ -27,19 +27,19 @@ spring:
       chat:
         options:
           model: ${OPENAI_MODEL}
-      embedding:
+#      embedding:
+#        options:
+#          model: text-embedding-v2
+    embedding:
+      onnx:
+        enabled: true
         options:
-          model: text-embedding-v2
-    #    embedding:
-    #      transformer:
-    #        tokenizer:
-    #          uri: classpath:/onnx/all-MiniLM-L6-v2/tokenizer.json
-    #        onnx:
-    #          modelUri: classpath:/onnx/all-MiniLM-L6-v2/model.onnx
-    #          modelOutputName: token_embeddings
-    #        cache:
-    #          enabled: true
-    #          directory: file:/onnx
+          model: all-MiniLM-L6-v2
+        transformer:
+          tokenizer:
+            uri: classpath:/onnx/all-MiniLM-L6-v2/tokenizer.json
+          onnx:
+            model-uri: classpath:/onnx/all-MiniLM-L6-v2/model.onnx
     vectorstore:
       redis:
         # 必须启动时候自动创建'索引', 不然会出现查询不到数据等问题
