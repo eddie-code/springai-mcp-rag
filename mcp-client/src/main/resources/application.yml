@@ -6,9 +6,9 @@ spring:
   ai:
     mcp:
       client:
-        connection-timeout: 120s  # 增加到120秒
-        request-timeout: 60s     # 增加到60秒
         enabled: true
+        version: 1.0.0
+        request-timeout: 30s
         name: spring-ai-mcp-client
         type: ASYNC
         sse:
