@@ -48,6 +48,10 @@ public class EmailTool {
     // 发送方邮箱地址，从配置文件读取
     private final String from;
 
+    // 新增：注入 MAIL_QQ_AUTH_USER 环境变量
+    @Value("${MAIL_QQ_AUTH_USER}")
+    private String myEmailAddress;
+
     // 构造函数注入 JavaMailSender 和发件人地址
     @Autowired
     public EmailTool(JavaMailSender mailSender, @Value("${spring.mail.username}") String from) {
@@ -83,8 +87,10 @@ public class EmailTool {
     // 声明一个 MCP 工具方法，用于获取当前用户的邮箱地址
     @Tool(description = "查询我的邮件/邮箱地址")
     public String getMyEmailAddress() {
-        log.info("========== 调用MCP工具：getMyEmailAddress() ==========");
-        return "3074182915@qq.com"; // 返回预设邮箱地址
+//        log.info("========== 调用MCP工具：getMyEmailAddress() ==========");
+//        return "231071372@qq.com"; // 返回预设邮箱地址
+        log.info("========== 调用MCP工具：getMyEmailAddress() ========== {}", myEmailAddress);
+        return myEmailAddress; // 返回预设邮箱地址
     }
 
     // 声明另一个 MCP 工具方法，用于发送邮件
