@@ -13,8 +13,8 @@ spring:
   mail:
     host: smtp.qq.com               # QQ 邮箱 SMTP 服务器
     port: 587                       # 端口号465或587，改为 587 端口，更稳定
-    username: 231071372@qq.com
-    password: czvdvpskcrccbgdi       # 不是登录密码，而是「授权码」（16 位字母数字组合）
+    username: ${MAIL_QQ_AUTH_USER}
+    password: ${MAIL_QQ_AUTH_CODE}       # 不是登录密码，而是「授权码」（16 位字母数字组合）
     protocol: smtp                  # 改为 smtp
     default-encoding: UTF-8
     properties:
