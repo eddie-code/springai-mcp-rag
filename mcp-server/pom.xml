@@ -1,24 +1,50 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <!--
+        Maven项目对象模型（POM）根元素。
+        定义了项目的元数据、依赖管理、构建配置等信息。
+    -->
+
     <modelVersion>4.0.0</modelVersion>
+
+    <!--
+        父项目配置，用于继承父级项目的通用设置。
+        groupId: 父项目的组织ID
+        artifactId: 父项目的模块ID
+        version: 父项目的版本号
+    -->
     <parent>
         <groupId>org.dromara</groupId>
         <artifactId>springai-mcp-rag</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
+    <!-- 当前模块的唯一标识符 -->
     <artifactId>mcp-server</artifactId>
 
+    <!-- 项目名称描述 -->
     <name>mcp-server</name>
 
+    <!--
+        项目属性定义区：
+        - maven.compiler.source：Java源码编译版本
+        - maven.compiler.target：目标JVM运行版本
+        - project.build.sourceEncoding：项目源文件编码格式
+    -->
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <!--
+        依赖管理部分，用于统一控制子模块中依赖的版本号。
+        此处引入Spring AI BOM来统一其相关组件的版本。
+    -->
     <dependencyManagement>
         <dependencies>
+            <!-- Spring AI 平台 bom 导入，用于统一版本管理 -->
             <dependency>
                 <groupId>org.springframework.ai</groupId>
                 <artifactId>spring-ai-bom</artifactId>
@@ -29,70 +55,58 @@
         </dependencies>
     </dependencyManagement>
 
+    <!--
+        模块实际使用的依赖列表。
+        包括框架启动器、工具类库、测试支持以及邮件发送等功能所需依赖。
+    -->
     <dependencies>
-        <!-- SSE -->
+
+        <!-- SSE 支持：使用 WebFlux 实现 Server-Sent Events 功能 -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-mcp-server-webflux</artifactId>
         </dependency>
 
+        <!-- Lombok 工具：简化 Java Bean 编写，可选依赖 -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
 
+        <!-- Apache Commons Lang3 工具包：提供字符串处理、集合操作等实用方法 -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.17.0</version>
         </dependency>
 
+        <!-- Spring Boot 测试启动器：用于单元测试与集成测试 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- 邮件依赖 -->
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.boot</groupId>-->
-<!--            <artifactId>spring-boot-starter-mail</artifactId>-->
-<!--        </dependency>-->
+        <!-- DotEnv Java 库：加载 .env 文件中的环境变量 -->
+        <dependency>
+            <groupId>io.github.cdimascio</groupId>
+            <artifactId>dotenv-java</artifactId>
+            <version>3.2.0</version>
+        </dependency>
 
+        <!-- 邮件功能支持：通过 Spring Boot Starter Mail 提供邮件发送能力 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
 
-        <!-- MarkDown 格式转 HTML 格式工具 -->
-<!--        <dependency>-->
-<!--            <groupId>com.vladsch.flexmark</groupId>-->
-<!--            <artifactId>flexmark-all</artifactId>-->
-<!--            <version>0.64.8</version>-->
-<!--        </dependency>-->
-
-        <!-- 数据库 MySql 的坐标 -->
-<!--        <dependency>-->
-<!--            <groupId>com.mysql</groupId>-->
-<!--            <artifactId>mysql-connector-j</artifactId>-->
-<!--            <version>8.0.33</version>-->
-<!--        </dependency>-->
-
-        <!-- MyBatis-Plus 的坐标 -->
-<!--        <dependency>-->
-<!--            <groupId>com.baomidou</groupId>-->
-<!--            <artifactId>mybatis-plus-boot-starter</artifactId>-->
-<!--            <version>3.5.10.1</version>-->
-<!--            <exclusions>-->
-<!--                <exclusion>-->
-<!--                    <groupId>org.mybatis</groupId>-->
-<!--                    <artifactId>mybatis-spring</artifactId>-->
-<!--                </exclusion>-->
-<!--            </exclusions>-->
-<!--        </dependency>-->
-
-<!--        <dependency>-->
-<!--            <groupId>org.mybatis</groupId>-->
-<!--            <artifactId>mybatis-spring</artifactId>-->
-<!--            <version>3.0.4</version>-->
-<!--        </dependency>-->
+        <!-- Markdown 转 HTML 工具：Flexmark 全功能库，支持多种扩展语法 -->
+        <dependency>
+            <groupId>com.vladsch.flexmark</groupId>
+            <artifactId>flexmark-all</artifactId>
+            <version>0.64.8</version>
+        </dependency>
 
     </dependencies>
 

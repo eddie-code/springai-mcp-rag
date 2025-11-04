@@ -10,7 +10,26 @@ spring:
         version: 1.0.0 # 服务器版本号
         sse-endpoint: /sse
         type: async
+  mail:
+    host: smtp.qq.com               # QQ 邮箱 SMTP 服务器
+    port: 587                       # 端口号465或587，改为 587 端口，更稳定
+    username: 231071372@qq.com
+    password: czvdvpskcrccbgdi       # 不是登录密码，而是「授权码」（16 位字母数字组合）
+    protocol: smtp                  # 改为 smtp
+    default-encoding: UTF-8
+    properties:
+      debug: true  # 调试模式，便于排查问题
+      mail:
+        smtp:
+          socketFactory:
+            port: 465
+            class: javax.net.ssl.SSLSocketFactory
+          ssl:
+            enable: true
+#          auth: true                # 必须显式开启认证
+          timeout: 5000              # 超时时间
 
 logging:
   level:
     root: info
+    org.springframework.mail: debug  # 添加邮件调试日志
