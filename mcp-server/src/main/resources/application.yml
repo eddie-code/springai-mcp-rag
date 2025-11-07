@@ -3,6 +3,22 @@ spring:
     name: spring-ai-mcp-server
   profiles:
     active: dev
+  datasource: # 数据源的相关配置
+    type: com.zaxxer.hikari.HikariDataSource      # 数据源的类型，可以更改为其他的数据源配置，比如druid
+    driver-class-name: com.mysql.cj.jdbc.Driver      # mysql/MariaDB 的数据库驱动类名称
+    url: jdbc:mysql://${MYSQL_AUTH_URI}/springai-items-mcp?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${MYSQL_AUTH_USER}
+    password: ${MYSQL_AUTH_PASS}
+    hikari:
+      pool-name: DataSourceHikariCP           # 连接池的名字
+      connection-timeout: 30000               # 等待连接池分配连接的最大时间（毫秒），超过这个时长还没有可用的连接，则会抛出SQLException
+      minimum-idle: 5                         # 最小连接数
+      maximum-pool-size: 20                   # 最大连接数
+      auto-commit: true                       # 自动提交
+      idle-timeout: 600000                    # 连接超时的最大时长（毫秒），超时则会被释放（retired）
+      max-lifetime: 18000000                  # 连接池的最大生命时长（毫秒），超时则会被释放（retired）
+      connection-test-query: SELECT 1
+
   ai:
     mcp:
       server:
@@ -32,4 +48,14 @@ spring:
 logging:
   level:
     root: info
-    org.springframework.mail: debug  # 添加邮件调试日志
+
+# MyBatisPlus 的配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # 配置MyBatis日志实现类，使用标准输出打印SQL语句
+  global-config:
+    db-config:
+      id-type: assign_id      # 主键生成策略：使用assign_id方式生成分布式ID
+      update-strategy: not_empty  # 更新策略：只更新非空字段
+  mapper-locations: classpath*:/mappers/*.xml  # Mapper XML文件路径配置
+

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.dromara.mapper.ProductMapper">
+
+    <!--
+        通用查询映射结果
+        将数据库表字段与Product实体类属性进行映射绑定
+        实现ORM对象关系映射，便于MyBatis自动转换查询结果
+     -->
+    <resultMap id="BaseResultMap" type="org.dromara.pojo.Product">
+        <!-- 主键字段映射 -->
+        <id column="product_id" property="productId"/>
+        <!-- 产品名称字段映射 -->
+        <result column="product_name" property="productName"/>
+        <!-- 品牌字段映射 -->
+        <result column="brand" property="brand"/>
+        <!-- 产品描述字段映射 -->
+        <result column="description" property="description"/>
+        <!-- 价格字段映射 -->
+        <result column="price" property="price"/>
+        <!-- 库存数量字段映射 -->
+        <result column="stock" property="stock"/>
+        <!-- 状态字段映射 -->
+        <result column="status" property="status"/>
+        <!-- 创建时间字段映射 -->
+        <result column="create_time" property="createTime"/>
+        <!-- 更新时间字段映射 -->
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+</mapper>

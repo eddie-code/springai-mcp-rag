@@ -3,6 +3,7 @@ package org.dromara.mcp.config;
 import lombok.extern.slf4j.Slf4j;
 import org.dromara.mcp.tools.DateTool;
 import org.dromara.mcp.tools.EmailTool;
+import org.dromara.mcp.tools.ProductTool;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import org.springframework.context.annotation.Bean;
@@ -29,9 +30,13 @@ public class McpConfig {
      * @return ToolCallbackProvider 工具回调提供者实例
      */
     @Bean
-    public ToolCallbackProvider registMCPTools(DateTool dateTool, EmailTool emailTool) {
+    public ToolCallbackProvider registMCPTools(DateTool dateTool,
+                                               EmailTool emailTool,
+                                               ProductTool productTool
+
+    ) {
         return MethodToolCallbackProvider.builder()
-                .toolObjects(dateTool, emailTool)
+                .toolObjects(dateTool, emailTool, productTool)
                 .build();
     }
 
