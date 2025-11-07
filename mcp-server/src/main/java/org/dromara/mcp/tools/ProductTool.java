@@ -1,5 +1,6 @@
 package org.dromara.mcp.tools;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import jakarta.annotation.Resource;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,6 +14,7 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
@@ -84,6 +86,24 @@ public class ProductTool {
         productMapper.insert(product);
         return "商品信息创建成功";
     }
+
+    @Transactional
+    @Tool(description = "根据商品id删除商品记录")
+    public String deleteProduct(String productId) {
+
+        log.info("========== 调用MCP工具：deleteProduct() ==========");
+        log.info(String.format("| 参数 productId 为： %s", productId));
+        log.info("========== End ==========");
+
+        QueryWrapper<Product> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("product_id", productId);
+
+        productMapper.delete(queryWrapper);
+
+        return "商品信息删除成功";
+    }
+
+
 
 
 }
