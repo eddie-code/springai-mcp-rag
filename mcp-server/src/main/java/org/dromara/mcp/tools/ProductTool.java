@@ -8,6 +8,10 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.dromara.enums.ListSortEnum;
+import org.dromara.enums.PriceCompareEnum;
+import org.dromara.enums.ProductStatusEnum;
 import org.dromara.mapper.ProductMapper;
 import org.dromara.pojo.Product;
 import org.springframework.ai.tool.annotation.Tool;
@@ -19,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * @author lee
@@ -47,7 +52,7 @@ public class ProductTool {
         @ToolParam(description = "商品的库存数量")
         private Integer stock;
         @ToolParam(description = "商品的状态（上架状态的值为1/下架状态的值为0/预售状态的值为2）")
-        private Integer status;
+        private ProductStatusEnum status;
     }
 
 
@@ -103,6 +108,67 @@ public class ProductTool {
         return "商品信息删除成功";
     }
 
+    @Data
+    @ToString
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class QueryProductRequest {
+
+        // required = true 默认谁自动填充数据，所以查询的时候建议使用 false
+
+        @ToolParam(description = "商品的编号", required = false)
+        private String productId;
+        @ToolParam(description = "商品的名称", required = false)
+        private String productName;
+        @ToolParam(description = "商品的品牌", required = false)
+        private String brand;
+        @ToolParam(description = "具体商品价格大小", required = false)
+        private Integer price;
+        @ToolParam(description = "商品的状态（上架状态的值为1/下架状态的值为0/预售状态的值为2）", required = false)
+        private ProductStatusEnum status;
+//        @ToolParam(description = "查询列表的排序", required = false)
+//        private ListSortEnum sortEnum;
+//        @ToolParam(description = "比较价格的大小", required = false)
+//        private PriceCompareEnum priceCompareEnum;
+    }
+
+    @Tool(description = "把商品价格的比较（大于/小于/大于等于/小于等于/高于/低于/不高于/不低于/等于）转换为对应的枚举")
+    public PriceCompareEnum getPriceCompareEnum(String priceCompare) {
+
+        log.info("========== 调用MCP工具：getPriceCompareEnum() ==========");
+        log.info(String.format("| 参数 priceCompare 为： %s", priceCompare));
+        log.info("========== End ==========");
+
+        if (priceCompare.equalsIgnoreCase(PriceCompareEnum.GREATER_THAN.value)) {
+            return PriceCompareEnum.GREATER_THAN;
+        } else if (priceCompare.equalsIgnoreCase(PriceCompareEnum.LESS_THAN.value)) {
+            return PriceCompareEnum.LESS_THAN;
+        } else if (priceCompare.equalsIgnoreCase(PriceCompareEnum.GREATER_THAN_OR_EQUAL_TO.value)) {
+            return PriceCompareEnum.GREATER_THAN_OR_EQUAL_TO;
+        } else if (priceCompare.equalsIgnoreCase(PriceCompareEnum.LESS_THAN_OR_EQUAL_TO.value)) {
+            return PriceCompareEnum.LESS_THAN_OR_EQUAL_TO;
+        } else if (priceCompare.equalsIgnoreCase(PriceCompareEnum.HIGHER_THAN.value)) {
+            return PriceCompareEnum.HIGHER_THAN;
+        } else if (priceCompare.equalsIgnoreCase(PriceCompareEnum.LOWER_THAN.value)) {
+            return PriceCompareEnum.LOWER_THAN;
+        } else if (priceCompare.equalsIgnoreCase(PriceCompareEnum.NOT_HIGHER_THAN.value)) {
+            return PriceCompareEnum.NOT_HIGHER_THAN;
+        } else if (priceCompare.equalsIgnoreCase(PriceCompareEnum.NOT_LOWER_THAN.value)) {
+            return PriceCompareEnum.NOT_LOWER_THAN;
+        } else {
+            return PriceCompareEnum.EQUAL_TO;
+        }
+    }
+
+    @Tool(description = "根据条件查询商品（product）信息")
+    public List<Product> queryProductListByCondition(QueryProductRequest queryProductRequest) {
+
+        log.info("========== 调用MCP工具：queryProductListByCondition() ==========");
+        log.info(String.format("| 参数 queryProductRequest 为： %s", queryProductRequest.toString()));
+        log.info("========== End ==========");
+
+        return null;
+    }
 
 
 
