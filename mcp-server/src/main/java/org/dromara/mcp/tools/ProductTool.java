@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.dromara.enums.ListSortEnum;
 import org.dromara.enums.PriceCompareEnum;
@@ -83,6 +82,8 @@ public class ProductTool {
         }
         product.setProductId(randomId.toString());
 
+        product.setStatus(createProductRequst.getStatus().status);
+
         // 设置创建时间和更新时间
         product.setCreateTime(LocalDateTime.now());
         product.setUpdateTime(LocalDateTime.now());
@@ -126,10 +127,10 @@ public class ProductTool {
         private Integer price;
         @ToolParam(description = "商品的状态（上架状态的值为1/下架状态的值为0/预售状态的值为2）", required = false)
         private ProductStatusEnum status;
-//        @ToolParam(description = "查询列表的排序", required = false)
-//        private ListSortEnum sortEnum;
-//        @ToolParam(description = "比较价格的大小", required = false)
-//        private PriceCompareEnum priceCompareEnum;
+        @ToolParam(description = "查询列表的排序", required = false)
+        private ListSortEnum sortEnum;
+        @ToolParam(description = "比较价格的大小", required = false)
+        private PriceCompareEnum priceCompareEnum;
     }
 
     @Tool(description = "把商品价格的比较（大于/小于/大于等于/小于等于/高于/低于/不高于/不低于/等于）转换为对应的枚举")
@@ -167,9 +168,74 @@ public class ProductTool {
         log.info(String.format("| 参数 queryProductRequest 为： %s", queryProductRequest.toString()));
         log.info("========== End ==========");
 
-        return null;
-    }
+        // 从请求对象中提取查询条件
+        String productId = queryProductRequest.getProductId();
+        String productName = queryProductRequest.getProductName();
+        String brand = queryProductRequest.getBrand();
+        ProductStatusEnum status = queryProductRequest.getStatus();
+        ListSortEnum sortEnum = queryProductRequest.getSortEnum();
+        Integer price = queryProductRequest.getPrice();
+        PriceCompareEnum priceCompareEnum = queryProductRequest.getPriceCompareEnum();
 
+        // 创建查询构造器
+        QueryWrapper<Product> queryWrapper = new QueryWrapper<>();
+
+        // 根据商品ID精确查询
+        if (StringUtils.isNotBlank(productId)) {
+            queryWrapper.eq("product_id", productId);
+        }
+
+        // 根据商品名称模糊查询
+        if (StringUtils.isNotBlank(productName)) {
+            queryWrapper.like("product_name", productName);
+        }
+
+        // 根据品牌模糊查询
+        if (StringUtils.isNotBlank(brand)) {
+            queryWrapper.like("brand", brand);
+        }
+
+        // 根据商品状态精确查询
+        if (status != null) {
+            queryWrapper.eq("status", status);
+        }
+
+        // 根据价格和比较条件进行价格范围查询
+        if (price != null && priceCompareEnum != null) {
+            if (priceCompareEnum.type.equals(PriceCompareEnum.GREATER_THAN.type)) {
+                queryWrapper.gt("price", price);  // 大于指定价格
+            } else if (priceCompareEnum.type.equals(PriceCompareEnum.LESS_THAN.type)) {
+                queryWrapper.lt("price", price);  // 小于指定价格
+            } else if (priceCompareEnum.type.equals(PriceCompareEnum.GREATER_THAN_OR_EQUAL_TO.type)) {
+                queryWrapper.ge("price", price);  // 大于等于指定价格
+            } else if (priceCompareEnum.type.equals(PriceCompareEnum.LESS_THAN_OR_EQUAL_TO.type)) {
+                queryWrapper.le("price", price);  // 小于等于指定价格
+            } else if (priceCompareEnum.type.equals(PriceCompareEnum.HIGHER_THAN.type)) {
+                queryWrapper.gt("price", price);  // 高于指定价格(同大于)
+            } else if (priceCompareEnum.type.equals(PriceCompareEnum.LOWER_THAN.type)) {
+                queryWrapper.lt("price", price);  // 低于指定价格(同小于)
+            } else if (priceCompareEnum.type.equals(PriceCompareEnum.NOT_HIGHER_THAN.type)) {
+                queryWrapper.le("price", price);  // 不高于指定价格(同小于等于)
+            } else if (priceCompareEnum.type.equals(PriceCompareEnum.NOT_LOWER_THAN.type)) {
+                queryWrapper.ge("price", price);  // 不低于指定价格(同大于等于)
+            } else {
+                queryWrapper.eq("price", price);  // 等于指定价格
+            }
+        }
+
+        // 根据排序枚举设置查询结果排序方式
+        if (sortEnum != null && sortEnum.type.equals(ListSortEnum.ASC.type)) {
+            queryWrapper.orderByAsc("price");  // 按价格升序排列
+        }
+        if (sortEnum != null && sortEnum.type.equals(ListSortEnum.DESC.type)) {
+            queryWrapper.orderByDesc("price"); // 按价格降序排列
+        }
+
+        // 执行查询并返回结果列表
+        List<Product> productList = productMapper.selectList(queryWrapper);
+
+        return productList;
+    }
 
 
 }
