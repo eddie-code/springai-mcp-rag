@@ -35,6 +35,8 @@ public class ProductTool {
     @Resource
     private ProductMapper productMapper;
 
+    //================================== 10-2 数据库MCP工具 - 创建商品信息 ==================================
+
     @Data
     @ToString
     @NoArgsConstructor
@@ -53,7 +55,6 @@ public class ProductTool {
         @ToolParam(description = "商品的状态（上架状态的值为1/下架状态的值为0/预售状态的值为2）")
         private ProductStatusEnum status;
     }
-
 
     /**
      * 创建/新增商品信息记录
@@ -93,6 +94,8 @@ public class ProductTool {
         return "商品信息创建成功";
     }
 
+    //================================== 10-3 数据库MCP工具 - 删除商品信息 ==================================
+
     @Transactional
     @Tool(description = "根据商品id删除商品记录")
     public String deleteProduct(String productId) {
@@ -108,6 +111,9 @@ public class ProductTool {
 
         return "商品信息删除成功";
     }
+
+    //================================== 10-4 数据库MCP工具 - 枚举映射参数 ==================================
+    //================================== 10-5 数据库MCP工具 - 查询商品数据 ==================================
 
     @Data
     @ToString
@@ -235,6 +241,70 @@ public class ProductTool {
         List<Product> productList = productMapper.selectList(queryWrapper);
 
         return productList;
+    }
+
+    //================================== 10-6 数据库MCP工具 - 修改商品数据 ==================================
+
+    @Data
+    @ToString
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ModifyProductRequest {
+        @ToolParam(description = "商品的编号", required = false)
+        private String productId;
+        @ToolParam(description = "商品的名称", required = false)
+        private String productName;
+        @ToolParam(description = "商品的品牌", required = false)
+        private String brand;
+        @ToolParam(description = "商品的简介", required = false)
+        private String description;
+        @ToolParam(description = "具体商品价格大小", required = false)
+        private Integer price;
+        @ToolParam(description = "商品的库存数量", required = false)
+        private Integer stock;
+        @ToolParam(description = "商品的状态（上架状态的值为1/下架状态的值为0/预售状态的值为2）", required = false)
+        private ProductStatusEnum status;
+    }
+
+    /**
+     * 根据商品的ID/编号修改商品信息的工具方法
+     *
+     * @param modifyProductRequest 包含要修改的商品信息的请求对象
+     * @return 返回操作结果字符串，成功时返回"商品信息更新成功"，失败时返回错误信息
+     */
+    @Tool(description = "根据商品的ID/编号修改商品信息")
+    public String modifyProduct(ModifyProductRequest modifyProductRequest) {
+
+        // 记录方法调用日志开始
+        log.info("========== 调用MCP工具：modifyProduct() ==========");
+        // 记录传入的参数信息
+        log.info(String.format("| 参数 modifyProductRequest 为： %s", modifyProductRequest.toString()));
+        // 记录日志结束标识
+        log.info("========== End ==========");
+
+        // 创建一个新的Product对象用于存储要更新的数据
+        Product product = new Product();
+        // 使用BeanUtils将modifyProductRequest中的属性值复制到product对象中
+        BeanUtils.copyProperties(modifyProductRequest, product);
+
+        // 设置更新时间为当前时间
+        product.setUpdateTime(LocalDateTime.now());
+
+        // 创建查询条件构造器
+        QueryWrapper<Product> queryWrapper = new QueryWrapper<>();
+        // 设置查询条件：根据商品ID精确匹配
+        queryWrapper.eq("product_id", modifyProductRequest.getProductId());
+
+        // 执行更新操作，返回受影响的行数
+        int update = productMapper.update(product, queryWrapper);
+        // 判断更新是否成功（是否有记录被更新）
+        if (update <= 0) {
+            // 如果没有记录被更新，返回失败信息
+            return "商品信息更新失败，或商品可能不存在";
+        }
+
+        // 更新成功，返回成功信息
+        return "商品信息更新成功";
     }
 
 
